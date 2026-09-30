@@ -1,0 +1,772 @@
+<title>Nations Wars Game Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: single dark "war room" column; briefing sections stacked, mockups full-width at 16:9 */
+:root {
+  color-scheme: dark;
+  --bg: #101419;
+  --panel: #171d24;
+  --panel-2: #1e262f;
+  --line: #2b3540;
+  --fg: #e1e6ec;
+  --muted: #8f9bab;
+  --accent: #f0a531;
+  --accent-ink: #1b1204;
+  --good: #6cc070;
+  --warn: #e6c24a;
+  --bad: #e0533d;
+  --display: "Chakra Petch", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--body); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 80px; display: grid; gap: 64px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); letter-spacing: .02em; text-transform: uppercase; }
+h2 { font-size: 1.7rem; text-transform: uppercase; letter-spacing: .03em; }
+h3 { font-size: 1.15rem; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font: 600 .74rem/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+.muted { color: var(--muted); }
+section { display: grid; gap: 22px; }
+.sec-head { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 22px; }
+header.hero { display: grid; gap: 16px; }
+.hero .stamp { display: inline-block; justify-self: start; border: 2px solid var(--accent); color: var(--accent); font: 700 .8rem/1 var(--mono); letter-spacing: .2em; padding: 6px 10px; transform: rotate(-2deg); }
+.hero p { font-size: 1.08rem; }
+
+/* decisions */
+.decisions { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.decision { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: grid; gap: 8px; align-content: start; }
+.decision .q { font-family: var(--display); font-weight: 600; font-size: 1.02rem; }
+.decision .pick { font: 600 .82rem/1.4 var(--mono); color: var(--accent); }
+.decision .alt { font-size: .86rem; color: var(--muted); }
+
+/* mockups */
+figure { margin: 0; display: grid; gap: 10px; }
+figcaption { font-size: .85rem; color: var(--muted); }
+.shot { width: 100%; max-width: 100%; aspect-ratio: 16 / 9; display: block; border: 1px solid var(--line); background: #000; }
+.options { display: grid; gap: 40px; }
+.option { display: grid; gap: 14px; }
+.option-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 16px; }
+.tag { font: 600 .72rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: 5px 8px; border: 1px solid var(--line); color: var(--muted); }
+.tag.rec { border-color: var(--accent); color: var(--accent-ink); background: var(--accent); }
+.proscons { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px 28px; }
+.proscons ul { margin: 0; padding-left: 18px; }
+.proscons li { margin: 2px 0; }
+.proscons h4 { margin: 0 0 4px; font: 600 .74rem/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+.pro h4 { color: var(--good); } .con h4 { color: var(--bad); }
+
+/* tables */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 600 .72rem/1.2 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); background: var(--panel); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: center; }
+.dm td.num { font-weight: 600; }
+
+/* nations */
+.nations { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.nation { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--nc); padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.nation-top { display: flex; gap: 12px; align-items: center; }
+.nation-top svg { flex: none; width: 46px; height: 46px; }
+.nation .tagline { font: 600 .78rem/1.3 var(--mono); color: var(--nc); letter-spacing: .04em; }
+.nation h3 { font-size: 1.25rem; }
+.passive { font-size: .9rem; background: var(--panel-2); padding: 10px 12px; }
+.passive b { color: var(--nc); font-weight: 600; }
+.stats { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font: .76rem/1.4 var(--mono); color: var(--muted); align-items: center; }
+.bar { display: flex; gap: 3px; }
+.bar i { display: block; height: 8px; flex: 1; background: var(--line); }
+.bar i.on { background: var(--nc); }
+.nation h4 { margin: 0; font: 600 .7rem/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.units { display: grid; gap: 5px; font-size: .88rem; }
+.units div { display: grid; grid-template-columns: 1fr; }
+.units b { font-weight: 600; }
+.units span { color: var(--muted); font-size: .82rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chips span { font-size: .78rem; padding: 3px 7px; background: var(--panel-2); border: 1px solid var(--line); }
+.super { font-size: .88rem; border-left: 3px solid var(--nc); padding-left: 10px; }
+
+/* resources */
+.res { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.res .card { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: grid; gap: 8px; align-content: start; }
+.res .card.rec { border-color: var(--accent); }
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.kv div { background: var(--panel); padding: 12px 14px; display: grid; gap: 2px; }
+.kv b { font: 600 1.15rem/1.2 var(--mono); color: var(--accent); font-variant-numeric: tabular-nums; }
+.kv span { font-size: .84rem; color: var(--muted); }
+
+/* architecture */
+.arch { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.arch ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+pre.tree { margin: 0; background: var(--panel); border: 1px solid var(--line); padding: 16px; font: .8rem/1.55 var(--mono); overflow-x: auto; color: var(--fg); }
+
+/* roadmap */
+.road { display: grid; gap: 0; border-left: 2px solid var(--line); margin-left: 8px; }
+.ms { position: relative; padding: 0 0 22px 24px; display: grid; gap: 4px; }
+.ms::before { content: ""; position: absolute; left: -7px; top: 5px; width: 12px; height: 12px; background: var(--bg); border: 2px solid var(--accent); }
+.ms .when { font: 600 .74rem/1 var(--mono); color: var(--accent); letter-spacing: .08em; }
+.ms h3 { font-size: 1.05rem; }
+
+/* ===== HTML mockups (lobby + nation select), scale with container width ===== */
+.mock { aspect-ratio: 16 / 9; max-width: 100%; container-type: inline-size; border: 1px solid var(--line); overflow: hidden; position: relative; }
+.mock-inner { position: absolute; inset: 0; font-size: 1.25cqw; grid-template-rows: auto minmax(0, 1fr) auto; font-family: var(--display); color: #d7dde4;
+  background: radial-gradient(ellipse at 30% 0%, #2a3440 0%, #12171d 60%), #12171d; padding: 2.2em 2.6em; display: grid; gap: 1.2em; }
+.m-title { display: flex; justify-content: space-between; align-items: baseline; border-bottom: .12em solid #f0a531; padding-bottom: .5em; }
+.m-title h5 { margin: 0; font-size: 2.1em; letter-spacing: .06em; text-transform: uppercase; }
+.m-title span { font-family: var(--mono); font-size: .9em; color: #f0a531; letter-spacing: .15em; }
+.lobby { display: grid; grid-template-columns: 1.75fr 1fr; gap: 1.6em; min-height: 0; }
+.slots { display: grid; gap: .45em; align-content: start; }
+.slot { display: grid; grid-template-columns: 1.6em 1fr 1fr 3.4em 3.4em 3.4em; gap: .8em; align-items: center; background: #1b232c; border: .08em solid #2f3a46; padding: .5em .8em; font-size: 1.05em; }
+.slot.head { background: none; border: 0; font-family: var(--mono); font-size: .75em; color: #8793a1; letter-spacing: .12em; text-transform: uppercase; padding-block: 0; }
+.slot .n { font-family: var(--mono); color: #8793a1; }
+.slot .sel { display: flex; align-items: center; gap: .5em; background: #0f1419; border: .08em solid #37424f; padding: .25em .5em; justify-content: space-between; }
+.slot .sel::after { content: "▾"; color: #8793a1; font-size: .8em; }
+.slot .sel svg { width: 1.3em; height: 1.3em; flex: none; }
+.slot .sel em { font-style: normal; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.swatch { width: 1.5em; height: 1.1em; border: .1em solid #0008; }
+.slot .team, .slot .pos { font-family: var(--mono); text-align: center; background: #0f1419; border: .08em solid #37424f; padding: .25em 0; }
+.slot.open { opacity: .45; }
+.side { display: grid; gap: .6em; align-content: start; }
+.mapbox { border: .1em solid #37424f; background: #0f1419; aspect-ratio: 16/9; position: relative; }
+.mapbox svg { width: 100%; height: 100%; display: block; }
+.mapname { display: flex; justify-content: space-between; font-size: 1.05em; }
+.mapname span { font-family: var(--mono); color: #8793a1; font-size: .85em; }
+.settings { display: grid; gap: .2em; font-size: .85em; }
+.settings div { display: flex; justify-content: space-between; border-bottom: .06em solid #2a333d; padding-bottom: .25em; }
+.settings b { font-family: var(--mono); font-weight: 600; color: #f0a531; }
+.m-foot { display: flex; justify-content: space-between; align-items: center; }
+.btn { font-family: var(--display); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; padding: .6em 1.8em; border: .12em solid #56616e; color: #c9d1da; }
+.btn.go { background: #f0a531; color: #1b1204; border-color: #f0a531; }
+.pick-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: .9em; min-height: 0; }
+.pick { background: linear-gradient(#1c242d, #141a20); border: .1em solid #2f3a46; padding: 1.1em .9em; display: grid; gap: .7em; align-content: start; justify-items: center; text-align: center; position: relative; }
+.pick.on { border-color: var(--nc); box-shadow: 0 0 0 .15em var(--nc), 0 0 2.4em color-mix(in srgb, var(--nc) 45%, transparent); background: linear-gradient(color-mix(in srgb, var(--nc) 22%, #1c242d), #141a20); }
+.pick svg { width: 5.2em; height: 5.2em; }
+.pick .pn { font-size: 1.2em; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; line-height: 1.1; }
+.pick .pt { font-family: var(--mono); font-size: .72em; color: var(--nc); letter-spacing: .05em; }
+.pick .pstats { width: 100%; display: grid; grid-template-columns: auto 1fr; gap: .3em .5em; font-family: var(--mono); font-size: .66em; color: #8793a1; text-align: left; align-items: center; }
+.pick .pbar { display: flex; gap: .2em; }
+.pick .pbar i { flex: 1; height: .55em; background: #2b3540; }
+.pick .pbar i.on { background: var(--nc); }
+.pick .badge { position: absolute; top: -.8em; background: var(--nc); color: #0d1014; font-family: var(--mono); font-size: .7em; font-weight: 700; padding: .2em .6em; letter-spacing: .12em; }
+.pick-detail { display: flex; gap: 2em; font-size: .95em; border-top: .06em solid #2a333d; padding-top: .8em; color: #b4bec9; }
+.pick-detail b { color: #f0a531; font-family: var(--mono); font-weight: 600; margin-right: .4em; }
+
+@media (max-width: 560px) { .wrap { padding-inline: 16px; gap: 48px; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <span class="stamp">Design brief · Draft 1</span>
+  <h1>Nations Wars</h1>
+  <p>A Unity RTS in the spirit of Red Alert. We build Skirmish mode first: you against AI opponents on one map, with a choice of five nations. Each nation has its own buildings, units, weapons and a superweapon. Players harvest ore, capture oil and manage a power grid.</p>
+  <p class="muted">The screenshots below are concept mockups drawn in code to compare directions. They are not in-engine captures.</p>
+</header>
+
+<section id="decisions">
+  <div class="sec-head">
+    <span class="eyebrow">Your call</span>
+    <h2>Decisions to make first</h2>
+    <p class="muted">Each has a recommended pick. The rest of this plan assumes the recommendations, and it adapts easily if you choose differently.</p>
+  </div>
+  <div class="decisions">
+    <div class="decision"><div class="q">Visual direction</div><div class="pick">→ A · Cold War alt-history</div><div class="alt">Also: B near-future 2070, C winter dieselpunk</div></div>
+    <div class="decision"><div class="q">Resource model</div><div class="pick">→ Ore + Oil + Power</div><div class="alt">Also: classic ore only, or territory control</div></div>
+    <div class="decision"><div class="q">Nations</div><div class="pick">→ Five fictional factions</div><div class="alt">Inspired by real powers, but no real flags. That avoids political baggage and gives more design freedom.</div></div>
+    <div class="decision"><div class="q">MVP scope</div><div class="pick">→ 2 nations, 2 maps, 1 AI</div><div class="alt">Atlantic Alliance vs Red Star Union first, then add the other three</div></div>
+    <div class="decision"><div class="q">Camera and rendering</div><div class="pick">→ 3D, fixed tilted camera</div><div class="alt">Like Red Alert 3. The alternative, 2D isometric sprites, is cheaper to draw but harder to animate.</div></div>
+  </div>
+</section>
+
+<section id="look">
+  <div class="sec-head">
+    <span class="eyebrow">Screenshots · 3 options</span>
+    <h2>Visual direction</h2>
+    <p class="muted">All three use the same Red Alert layout: the battlefield on the left and a build sidebar on the right, with credits, power, the minimap and the build queue.</p>
+  </div>
+  <div class="options">
+    <div class="option">
+      <div class="option-head"><h3>A · Cold War alt-history</h3><span class="tag rec">Recommended</span><span class="tag">Closest to Red Alert</span></div>
+      <figure><canvas class="shot" id="shotA" width="1280" height="720"></canvas>
+        <figcaption>Atlantic Alliance base (blue) pushes into Red Star Union lines. A Tesla Coil fires at the lead tank, while a harvester works the gold ore field.</figcaption></figure>
+      <div class="proscons"><div class="pro"><h4>Pros</h4><ul><li>Instantly readable genre. Players know the rules on sight.</li><li>Bright, saturated palette keeps units readable at small size.</li><li>Tesla and superweapon tech gives wild units room to fit.</li></ul></div>
+      <div class="con"><h4>Cons</h4><ul><li>Close to a well-known franchise, so we need our own humor and silhouettes.</li></ul></div></div>
+    </div>
+    <div class="option">
+      <div class="option-head"><h3>B · Near-future 2070</h3><span class="tag">Sci-fi</span></div>
+      <figure><canvas class="shot" id="shotB" width="1280" height="720"></canvas>
+        <figcaption>Nova Syndicate hover tanks (violet) against Sand Scorpion armor (orange) on basalt plains with a crystal field. Energy beams replace tracers.</figcaption></figure>
+      <div class="proscons"><div class="pro"><h4>Pros</h4><ul><li>Glow and emissive materials look great in URP with little art budget.</li><li>Easy to justify drones, shields and hover units.</li></ul></div>
+      <div class="con"><h4>Cons</h4><ul><li>Dark ground plus glowing units can make readability suffer in big fights.</li><li>Further from the classic Red Alert feel you asked for.</li></ul></div></div>
+    </div>
+    <div class="option">
+      <div class="option-head"><h3>C · Winter dieselpunk</h3><span class="tag">Grounded</span></div>
+      <figure><canvas class="shot" id="shotC" width="1280" height="720"></canvas>
+        <figcaption>Olive Jade Dynasty column crosses a frozen front toward maroon Red Star positions. Tracks in the snow and a brass HUD.</figcaption></figure>
+      <div class="proscons"><div class="pro"><h4>Pros</h4><ul><li>Distinct mood, and snow gives natural contrast for units.</li><li>Rivets, smoke and brass UI give a strong identity.</li></ul></div>
+      <div class="con"><h4>Cons</h4><ul><li>A muted palette makes teams harder to tell apart without strong team colors.</li><li>Air power and superweapons feel less at home.</li></ul></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="skirmish">
+  <div class="sec-head">
+    <span class="eyebrow">Mode 1</span>
+    <h2>Skirmish mode</h2>
+    <p class="muted">Pick a map, fill 2–8 slots with players or AI, choose a nation for each, and play until one side remains.</p>
+  </div>
+  <figure>
+    <div class="mock" id="mockLobby"><div class="mock-inner">
+      <div class="m-title"><h5>Skirmish setup</h5><span>6 / 8 SLOTS</span></div>
+      <div class="lobby">
+        <div class="slots" id="slots"></div>
+        <div class="side">
+          <div class="mapbox"><svg viewBox="0 0 160 120" preserveAspectRatio="none" aria-hidden="true">
+            <rect width="160" height="120" fill="#3d5a2a"/>
+            <path d="M0 70 C40 60 60 85 90 70 S140 40 160 50 L160 58 C140 50 120 80 90 78 S40 70 0 78Z" fill="#2c5f86"/>
+            <circle cx="80" cy="30" r="9" fill="#c9a23a" opacity=".8"/><circle cx="78" cy="96" r="8" fill="#c9a23a" opacity=".8"/>
+            <circle cx="30" cy="50" r="5" fill="#c9a23a" opacity=".8"/><circle cx="130" cy="84" r="5" fill="#c9a23a" opacity=".8"/>
+            <rect x="52" y="44" width="4" height="4" fill="#111"/><rect x="104" y="88" width="4" height="4" fill="#111"/><rect x="110" y="20" width="4" height="4" fill="#111"/>
+            <g font-family="monospace" font-size="9" font-weight="700" text-anchor="middle">
+              <circle cx="16" cy="16" r="7" fill="#3d7fe0"/><text x="16" y="19" fill="#fff">1</text>
+              <circle cx="144" cy="104" r="7" fill="#d8412f"/><text x="144" y="107" fill="#fff">2</text>
+              <circle cx="16" cy="104" r="7" fill="#2fa37a"/><text x="16" y="107" fill="#fff">3</text>
+              <circle cx="144" cy="16" r="7" fill="#e08a2c"/><text x="144" y="19" fill="#fff">4</text>
+              <circle cx="80" cy="60" r="7" fill="#8a6cf0"/><text x="80" y="63" fill="#fff">5</text>
+              <circle cx="40" cy="60" r="7" fill="#e3e3e3"/><text x="40" y="63" fill="#111">6</text>
+            </g></svg></div>
+          <div class="mapname">Rhine Crossing <span>8P · 160×120</span></div>
+          <div class="settings">
+            <div>Starting credits <b>10,000</b></div>
+            <div>Tech level <b>10 / 10</b></div>
+            <div>Superweapons <b>ON</b></div>
+            <div>Crates <b>ON</b></div>
+            <div>Shroud &amp; fog <b>ON</b></div>
+            <div>Game speed <b>NORMAL</b></div>
+            <div>Short game <b>OFF</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="m-foot"><span class="btn">Back</span><span class="btn go">Start game</span></div>
+    </div></div>
+    <figcaption>Mockup: skirmish lobby. Players 1 and 3 are allied on team A against three AI personalities.</figcaption>
+  </figure>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Setting</th><th>Options</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Map</td><td>2–8 player maps</td><td>MVP ships with 2 maps: <i>Rhine Crossing</i> (4P) and <i>Twin Valleys</i> (2P)</td></tr>
+      <tr><td>Slot</td><td>Human · AI · Open · Closed</td><td>Each slot sets nation (or Random), color, team and start position</td></tr>
+      <tr><td>AI difficulty</td><td>Easy · Medium · Hard · Brutal</td><td>Difficulty changes reaction time and APM. Brutal gets +20% income.</td></tr>
+      <tr><td>AI personality</td><td>Balanced · Rusher · Turtle · Air-heavy</td><td>Each personality uses different build orders and attack timings</td></tr>
+      <tr><td>Starting credits</td><td>5,000 · 10,000 · 20,000 · 50,000</td><td></td></tr>
+      <tr><td>Tech level</td><td>1–10</td><td>Caps which units and buildings can be built</td></tr>
+      <tr><td>Superweapons</td><td>On / Off</td><td></td></tr>
+      <tr><td>Crates</td><td>On / Off</td><td>Random pickups: cash, veterancy, heal, reveal map</td></tr>
+      <tr><td>Short game</td><td>On / Off</td><td>On: you lose when all your buildings are gone. Off: you lose when all your buildings and units are gone.</td></tr>
+      <tr><td>Unit cap</td><td>100 · 200 · 300</td><td>Performance target is 300 active units at 60 fps</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="arch">
+    <div><h3>Core game loop</h3>
+      <ul><li>Deploy the MCV into a Construction Yard.</li><li>Build power, then a refinery (comes with a free harvester), then barracks and a war factory.</li><li>Scout, capture oil derricks and expand to new ore fields.</li><li>Tech up, build an army, raid harvesters, defend your power.</li><li>Charge the superweapon and break the enemy base.</li></ul></div>
+    <div><h3>RTS controls (must-have)</h3>
+      <ul><li>Box select, double-click to select all of one type, Ctrl+1–9 control groups.</li><li>Right-click to move or attack. Attack-move, force-fire, waypoints, guard.</li><li>Stances: aggressive, guard, hold fire.</li><li>Sidebar build queue with repeat build and rally points.</li><li>Click the minimap to jump the camera. Edge-pan and zoom.</li></ul></div>
+  </div>
+</section>
+
+<section id="nations">
+  <div class="sec-head">
+    <span class="eyebrow">5 factions</span>
+    <h2>Nations</h2>
+    <p class="muted">Every nation shares a common skeleton (HQ, power, barracks, factory, refinery), so the game stays learnable. Each one then gets its own passive, unique buildings, a 7-unit roster and a superweapon.</p>
+  </div>
+  <figure>
+    <div class="mock" id="mockPick"><div class="mock-inner">
+      <div class="m-title"><h5>Choose your nation</h5><span>SKIRMISH · PLAYER 1</span></div>
+      <div class="pick-grid" id="pickGrid"></div>
+      <div class="pick-detail" id="pickDetail"></div>
+      <div class="m-foot"><span class="btn">Random</span><span class="btn go">Confirm</span></div>
+    </div></div>
+    <figcaption>Mockup: nation select with Red Star Union highlighted.</figcaption>
+  </figure>
+  <div class="nations" id="nationCards"></div>
+</section>
+
+<section id="resources">
+  <div class="sec-head">
+    <span class="eyebrow">Economy · 3 options</span>
+    <h2>Resources</h2>
+  </div>
+  <div class="res">
+    <div class="card"><h3>1 · Classic ore</h3><p>One currency. Harvesters mine ore and gems and bring them to a refinery. Power is a separate constraint.</p><p class="muted">Simplest and most faithful to Red Alert. There are few reasons to fight over the map beyond ore fields.</p></div>
+    <div class="card rec"><span class="tag rec" style="justify-self:start">Recommended</span><h3>2 · Ore + Oil + Power</h3><p>Ore is harvested as in Red Alert. Neutral <b>oil derricks</b> are captured with infantry and give a steady trickle of credits. <b>Power</b> gates what runs.</p><p class="muted">Adds map-control objectives, rewards raiding, and gives Sand Scorpion an economic identity.</p></div>
+    <div class="card"><h3>3 · Territory control</h3><p>Capture sectors on the map. Each sector adds income per minute. There are no harvesters.</p><p class="muted">Aggressive and modern (Company of Heroes style), but it loses the harvester-raiding feel of Red Alert.</p></div>
+  </div>
+  <div class="kv">
+    <div><b>10,000</b><span>Default starting credits</span></div>
+    <div><b>700 / 1,400</b><span>Credits per harvester load (ore / gems)</span></div>
+    <div><b>~45 s</b><span>Harvester round trip on a nearby field</span></div>
+    <div><b>+300 / min</b><span>Per captured oil derrick (+50% for Sand Scorpion)</span></div>
+    <div><b>−50%</b><span>Build speed on low power. Radar and defenses shut off.</span></div>
+    <div><b>1 per 30 s</b><span>Ore regrowth next to an ore mine</span></div>
+  </div>
+</section>
+
+<section id="combat">
+  <div class="sec-head">
+    <span class="eyebrow">Weapons</span>
+    <h2>Damage vs armor</h2>
+    <p class="muted">Every weapon has a warhead type and every unit has an armor class. Damage is multiplied by this table, which gives counters without special cases. Values are in percent.</p>
+  </div>
+  <div class="table-wrap"><table class="dm" id="dm"></table></div>
+  <p class="muted">Veterancy: 3 ranks (Veteran, Elite, Heroic), each giving +20% damage and armor. Heroic units also self-heal.</p>
+</section>
+
+<section id="unity">
+  <div class="sec-head">
+    <span class="eyebrow">Tech</span>
+    <h2>Unity architecture</h2>
+  </div>
+  <div class="arch">
+    <div><ul>
+      <li><b>Unity 6 LTS + URP</b>, C#, New Input System, UI Toolkit for menus and HUD.</li>
+      <li><b>Data-driven content.</b> Every nation, unit, building, weapon and armor type is a ScriptableObject, so designers balance without touching code.</li>
+      <li><b>Simulation separated from view.</b> Game logic runs on a fixed 15 Hz tick and the renderer interpolates. This keeps a lockstep multiplayer option open later.</li>
+      <li><b>Pathfinding.</b> Grid flow fields for group movement plus local avoidance. Unity NavMesh struggles with hundreds of units. A* Pathfinding Project Pro is a paid fallback.</li>
+      <li><b>Performance.</b> Jobs + Burst for movement, targeting and visibility, aiming for 300 units at 60 fps.</li>
+      <li><b>Fog of war.</b> Visibility grid computed in the sim and uploaded as a texture that a ground shader samples.</li>
+      <li><b>AI.</b> Per-nation build orders as ScriptableObjects, plus a utility AI that chooses between expand, defend, harass and all-in.</li>
+      <li><b>Addressables</b> for per-nation assets, so each faction loads only what it uses.</li>
+    </ul></div>
+    <pre class="tree">Assets/_Game/
+├─ Scenes/        Boot · MainMenu · SkirmishLobby · Battle
+├─ Scripts/
+│  ├─ Core/          GameLoop, SimTick, SeededRandom
+│  ├─ Simulation/
+│  │  ├─ Units/      UnitController, Locomotor, Turret
+│  │  ├─ Buildings/  Placement, ProductionQueue, Power
+│  │  ├─ Combat/     Weapon, Projectile, DamageTable
+│  │  ├─ Economy/    Harvester, Refinery, OilDerrick
+│  │  └─ Visibility/ FogGrid, Shroud
+│  ├─ Pathfinding/   FlowField, Avoidance
+│  ├─ AI/            BuildOrder, UtilityBrain, AttackWaves
+│  ├─ Input/         Selection, Commands, ControlGroups
+│  └─ UI/            Sidebar, Minimap, Lobby, NationSelect
+├─ Data/
+│  ├─ Nations/       AtlanticAlliance/, RedStarUnion/, …
+│  ├─ Weapons/  Armor/  TechTree/
+│  └─ Maps/
+├─ Art/  Prefabs/  VFX/  Audio/
+└─ Tests/          EditMode (damage, economy), PlayMode</pre>
+  </div>
+</section>
+
+<section id="roadmap">
+  <div class="sec-head">
+    <span class="eyebrow">Sequence</span>
+    <h2>Roadmap to a playable skirmish</h2>
+    <p class="muted">Estimated for one developer. Art can start in parallel with M2 on greybox shapes.</p>
+  </div>
+  <div class="road">
+    <div class="ms"><span class="when">M0 · WEEKS 1–2</span><h3>Foundation</h3><p class="muted">Project setup, RTS camera, grid map, unit selection, move orders, flow-field prototype.</p></div>
+    <div class="ms"><span class="when">M1 · WEEKS 3–5</span><h3>Base building &amp; economy</h3><p class="muted">Sidebar build queue, placement grid, power, ore fields, harvesters, refinery, oil derricks.</p></div>
+    <div class="ms"><span class="when">M2 · WEEKS 6–8</span><h3>Combat</h3><p class="muted">Weapons, projectiles, damage table, death and wrecks, veterancy. Atlantic Alliance in greybox.</p></div>
+    <div class="ms"><span class="when">M3 · WEEKS 9–11</span><h3>Skirmish shell</h3><p class="muted">Lobby, map loading, fog of war, minimap, win and lose, Red Star Union added.</p></div>
+    <div class="ms"><span class="when">M4 · WEEKS 12–15</span><h3>Skirmish AI</h3><p class="muted">Build orders, harvester management, attack waves, 4 difficulty levels. <b>MVP: playable 1v1 vs AI.</b></p></div>
+    <div class="ms"><span class="when">M5 · WEEKS 16–21</span><h3>All five nations</h3><p class="muted">Jade Dynasty, Sand Scorpion, Nova Syndicate, superweapons, balance pass.</p></div>
+    <div class="ms"><span class="when">M6 · WEEKS 16–24</span><h3>Art, VFX, audio</h3><p class="muted">Models, explosions, per-nation announcer voice ("Unit ready", "Construction complete"), music.</p></div>
+    <div class="ms"><span class="when">LATER</span><h3>Beyond skirmish</h3><p class="muted">Campaign, online multiplayer (lockstep), map editor, replays.</p></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+const NATIONS = [
+ {id:'aa', name:'Atlantic Alliance', tag:'Air power & precision', color:'#3d7fe0',
+  passive:'Radar range +25%. Aircraft cost 15% less.',
+  stats:{Armor:3, Air:5, Infantry:3, Economy:3, Speed:3},
+  buildings:['Airbase','Battle Lab','Pillbox','Patriot Battery','Spy Satellite'],
+  units:[['Ranger','Infantry','Assault rifle'],['Javelin Team','Infantry','Guided anti-tank missile'],['Ghost Sniper','Infantry','One-shots infantry, stealthed while still'],['Grizzly MBT','Tank','105 mm cannon'],['Bulldog IFV','Vehicle','30 mm autocannon, carries 4 infantry'],['Warhawk','Helicopter','Chain gun + guided missiles'],['Nightjar','Stealth bomber','Laser-guided bombs']],
+  superw:'Orbital Strike: a 3-second beam that cuts across a line of targets. 7 min charge.'},
+ {id:'rs', name:'Red Star Union', tag:'Heavy armor & Tesla tech', color:'#d8412f',
+  passive:'Tanks have +15% HP and −10% speed. Units inside a Tesla field self-repair.',
+  stats:{Armor:5, Air:2, Infantry:3, Economy:3, Speed:2},
+  buildings:['Tesla Reactor','Radar Tower','Tech Institute','Sentry Gun','Tesla Coil'],
+  units:[['Conscript','Infantry','SMG, cheap, trains 2 per slot'],['Flak Trooper','Infantry','Flak rifle, anti-air'],['Tesla Trooper','Infantry','Arc gun, chains between targets'],['Rhino Tank','Tank','120 mm cannon'],['Mammoth Tank','Heavy tank','Twin 120 mm + AA missiles, self-heals'],['V4 Launcher','Artillery','Long-range ballistic rocket'],['Kodiak Airship','Airship','Carpet bombs. Very slow, very tough.']],
+  superw:'Iron Curtain: 9 units become invulnerable for 20 s. 6 min charge.'},
+ {id:'jd', name:'Jade Dynasty', tag:'Hordes & propaganda', color:'#2fa37a',
+  passive:'Infantry trains in pairs. Units near a Propaganda Tower heal and fire 10% faster.',
+  stats:{Armor:3, Air:2, Infantry:5, Economy:4, Speed:3},
+  buildings:['Coal Plant','Propaganda Tower','Hacker Den','Gatling Bunker','Great Wall'],
+  units:[['Red Guard','Infantry','Rifle, +5% damage per nearby ally'],['Tank Hunter','Infantry','Bazooka'],['Hacker','Infantry','Steals credits, disables vehicles'],['Battlemaster','Tank','Cheap 90 mm, ranks up faster'],['Overlord','Super-heavy tank','Twin 155 mm, gatling or bunker add-on'],['Inferno Cannon','Artillery','Napalm shells, area fire'],['Helix','Transport heli','Carries 5, gatling add-on']],
+  superw:'Dragon Barrage: 40 artillery shells across a wide area. 7 min charge.'},
+ {id:'ss', name:'Sand Scorpion Pact', tag:'Guerrilla, speed & oil', color:'#e08a2c',
+  passive:'Needs no power grid. Oil derricks earn +50%. Units camouflage after standing still for 3 s.',
+  stats:{Armor:2, Air:1, Infantry:4, Economy:5, Speed:5},
+  buildings:['Arms Dealer','Tunnel Network','Palace','Stinger Site','Demo Trap'],
+  units:[['Rebel','Infantry','Rifle, captures buildings'],['RPG Trooper','Infantry','Rockets, hits ground and air'],['Saboteur','Infantry','Invisible, plants charges'],['Technical','Light vehicle','Pickup truck, upgrades weapons from salvage'],['Scorpion Tank','Tank','75 mm + rocket add-on'],['Quad Cannon','Anti-air','4× 20 mm, shreds aircraft and infantry'],['Toxin Truck','Support','Poison sprayer, clears garrisons']],
+  superw:'Scud Storm: 9 toxic missiles that deny an area for 30 s. 6 min charge.'},
+ {id:'nv', name:'Nova Syndicate', tag:'Drones, shields & energy', color:'#8a6cf0',
+  passive:'Buildings have regenerating shields. Units cost 25% more but fight 25% stronger. Heavy power use.',
+  stats:{Armor:4, Air:4, Infantry:2, Economy:2, Speed:4},
+  buildings:['Fusion Reactor','Drone Hive','Quantum Lab','Pulse Turret','Shield Pylon'],
+  units:[['Pulse Trooper','Infantry','Energy rifle, jump jets'],['Swarm Drones','Drone','Cheap, attacks in groups of 6'],['Aegis Walker','Mech','Projects a shield dome over allies'],['Lancer','Hover tank','Railgun that pierces a line'],['Mirage Tank','Stealth tank','Disguised as a tree when still'],['Prism Tank','Artillery','Beam splits across targets'],['Specter Wing','Stealth aircraft','EMP bomb disables vehicles']],
+  superw:'Chrono Rift: teleports up to 12 units to any spot you can see. 5 min charge.'}
+];
+
+function emblem(id, c) {
+  const s = {
+    aa: `<path d="M24 3 L43 10 V24 C43 36 34 43 24 46 C14 43 5 36 5 24 V10Z" fill="${c}"/><path d="M13 20 L24 27 L35 20 M13 28 L24 35 L35 28" stroke="#fff" stroke-width="3.2" fill="none"/>`,
+    rs: `<circle cx="24" cy="24" r="21" fill="${c}"/><path d="M24 9 L28.4 19.6 L39.8 20.4 L31 27.7 L33.8 38.8 L24 32.7 L14.2 38.8 L17 27.7 L8.2 20.4 L19.6 19.6Z" fill="#fff"/>`,
+    jd: `<path d="M24 3 L42 13.5 V34.5 L24 45 L6 34.5 V13.5Z" fill="${c}"/><circle cx="24" cy="24" r="10" fill="none" stroke="#fff" stroke-width="3"/><circle cx="24" cy="24" r="3.5" fill="#fff"/>`,
+    ss: `<path d="M24 2 L46 24 L24 46 L2 24Z" fill="${c}"/><path d="M14 30 C18 18 30 18 34 30 M24 14 V34 M17 22 L31 22" stroke="#fff" stroke-width="3" fill="none"/>`,
+    nv: `<circle cx="24" cy="24" r="21" fill="${c}"/><path d="M24 9 L37 32 H11Z" fill="none" stroke="#fff" stroke-width="3"/><circle cx="24" cy="25" r="3.5" fill="#fff"/>`
+  };
+  return `<svg viewBox="0 0 48 48" aria-hidden="true">${s[id]}</svg>`;
+}
+const bar = (n, cls='bar') => `<span class="${cls}">${[1,2,3,4,5].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</span>`;
+
+document.getElementById('nationCards').innerHTML = NATIONS.map(n => `
+  <article class="nation" style="--nc:${n.color}">
+    <div class="nation-top">${emblem(n.id, n.color)}<div><h3>${n.name}</h3><div class="tagline">${n.tag}</div></div></div>
+    <div class="passive"><b>Passive</b> · ${n.passive}</div>
+    <div class="stats">${Object.entries(n.stats).map(([k,v])=>`<span>${k}</span>${bar(v)}`).join('')}</div>
+    <h4>Unique buildings</h4>
+    <div class="chips">${n.buildings.map(b=>`<span>${b}</span>`).join('')}</div>
+    <h4>Army &amp; weapons</h4>
+    <div class="units">${n.units.map(u=>`<div><b>${u[0]} <span>· ${u[1]}</span></b><span>${u[2]}</span></div>`).join('')}</div>
+    <h4>Superweapon</h4>
+    <div class="super">${n.superw}</div>
+  </article>`).join('');
+
+document.getElementById('pickGrid').innerHTML = NATIONS.map(n => `
+  <div class="pick ${n.id==='rs'?'on':''}" style="--nc:${n.color}">${n.id==='rs'?'<span class="badge">SELECTED</span>':''}
+    ${emblem(n.id, n.color)}<div class="pn">${n.name}</div><div class="pt">${n.tag}</div>
+    <div class="pstats">${Object.entries(n.stats).map(([k,v])=>`<span>${k}</span>${bar(v,'pbar')}`).join('')}</div>
+  </div>`).join('');
+const rs = NATIONS[1];
+document.getElementById('pickDetail').innerHTML = `<span><b>PASSIVE</b>${rs.passive}</span><span><b>SUPER</b>Iron Curtain</span>`;
+
+const slotRows = [
+  ['1','You','aa','#3d7fe0','A','1'],
+  ['2','AI · Hard · Rusher','rs','#d8412f','B','2'],
+  ['3','AI · Medium · Balanced','jd','#2fa37a','A','3'],
+  ['4','AI · Brutal · Turtle','ss','#e08a2c','B','4'],
+  ['5','AI · Hard · Air-heavy','nv','#8a6cf0','B','5'],
+  ['6','Open','', '#555','–','–']
+];
+document.getElementById('slots').innerHTML =
+  `<div class="slot head"><span>#</span><span>Player</span><span>Nation</span><span>Clr</span><span>Team</span><span>Start</span></div>` +
+  slotRows.map(r => { const n = NATIONS.find(x=>x.id===r[2]);
+    return `<div class="slot ${r[2]?'':'open'}"><span class="n">${r[0]}</span><span class="sel"><em>${r[1]}</em></span>
+      <span class="sel">${n?emblem(n.id,n.color):''}<em>${n?n.name:'Random'}</em></span><span class="swatch" style="background:${r[3]}"></span>
+      <span class="team">${r[4]}</span><span class="pos">${r[5]}</span></div>`; }).join('');
+
+// damage matrix
+const armors = ['Infantry','Light vehicle','Heavy armor','Aircraft','Building'];
+const dmg = [
+  ['Bullet (rifles, MGs)',     [100, 60, 20, 50, 20]],
+  ['Cannon (tank shells)',     [ 30,100,100,  0, 70]],
+  ['Missile (rockets, AA)',    [ 25,100, 90,100, 60]],
+  ['Fire (napalm, flamers)',   [150, 60, 25,  0, 80]],
+  ['Energy (Tesla, beams)',    [ 80, 90, 90, 60, 60]],
+  ['Explosive (bombs, arty)',  [ 90, 80, 60,  0,150]]
+];
+function cellColor(v) {
+  if (v === 0) return 'background:#1a1f25;color:#5a6571';
+  const t = Math.min(v, 150) / 150;
+  const a = (0.12 + t * 0.55).toFixed(2);
+  return v >= 90 ? `background:rgba(108,192,112,${a})` : v >= 50 ? `background:rgba(230,194,74,${(a*0.8).toFixed(2)})` : `background:rgba(224,83,61,${(0.45 - t*0.6).toFixed(2)})`;
+}
+document.getElementById('dm').innerHTML = `<thead><tr><th>Warhead ↓ / Armor →</th>${armors.map(a=>`<th style="text-align:center">${a}</th>`).join('')}</tr></thead><tbody>` +
+  dmg.map(([w, vals]) => `<tr><td>${w}</td>${vals.map(v=>`<td class="num" style="${cellColor(v)}">${v===0?'—':v}</td>`).join('')}</tr>`).join('') + '</tbody>';
+
+/* ================= Battle mockup renderer ================= */
+function rng(seed) { return function() { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const TW = 64, TH = 32, VW = 1040, H = 720;
+function shade(hex, f) {
+  let r, g, b;
+  if (hex[0] === '#') { const n = parseInt(hex.slice(1), 16); r = n >> 16; g = n >> 8 & 255; b = n & 255; }
+  else [r, g, b] = hex.match(/\d+/g).map(Number);
+  if (f >= 0) { r += (255 - r) * f; g += (255 - g) * f; b += (255 - b) * f; } else { r *= 1 + f; g *= 1 + f; b *= 1 + f; }
+  return `rgb(${r|0},${g|0},${b|0})`;
+}
+const E = (dx, dy) => ({ x: dx * TW / 2, y: dy * TH / 2 }); // iso axis steps
+
+function isoBox(ctx, x, y, w, d, h, col, opt = {}) {
+  // (x,y) = top corner of footprint on ground
+  const p0 = {x, y}, p1 = {x: x + w*TW/2, y: y + w*TH/2}, p3 = {x: x - d*TW/2, y: y + d*TH/2};
+  const p2 = {x: p1.x - d*TW/2, y: p1.y + d*TH/2};
+  const up = p => ({x: p.x, y: p.y - h});
+  const poly = (pts, fill) => { ctx.beginPath(); pts.forEach((p,i)=> i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1; ctx.stroke(); };
+  // shadow
+  ctx.save(); ctx.globalAlpha = .28; poly([p1, {x:p1.x+h*.7,y:p1.y+h*.1}, {x:p2.x+h*.7,y:p2.y+h*.1}, p2], '#000'); ctx.restore();
+  poly([p3, p2, up(p2), up(p3)], shade(col, -0.15));
+  poly([p1, p2, up(p2), up(p1)], shade(col, -0.4));
+  poly([up(p0), up(p1), up(p2), up(p3)], opt.top || shade(col, 0.12));
+  if (opt.stripe) { // team stripe on left face
+    ctx.beginPath(); const s = h*0.35;
+    ctx.moveTo(p3.x, p3.y - s); ctx.lineTo(p2.x, p2.y - s); ctx.lineTo(p2.x, p2.y - s - 5); ctx.lineTo(p3.x, p3.y - s - 5); ctx.closePath();
+    ctx.fillStyle = opt.stripe; ctx.fill();
+  }
+  if (opt.glow) { ctx.save(); ctx.shadowColor = opt.glow; ctx.shadowBlur = 12; ctx.strokeStyle = opt.glow; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(up(p3).x, up(p3).y+4); ctx.lineTo(up(p2).x, up(p2).y+4); ctx.lineTo(up(p1).x, up(p1).y+4); ctx.stroke(); ctx.restore(); }
+  if (opt.door) { const m = {x:(p3.x+p2.x)/2, y:(p3.y+p2.y)/2}; ctx.beginPath(); ctx.moveTo(m.x-14, m.y-7); ctx.lineTo(m.x+14, m.y+7); ctx.lineTo(m.x+14, m.y+7-h*0.55); ctx.lineTo(m.x-14, m.y-7-h*0.55); ctx.closePath(); ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fill(); }
+  return { top: up(p0), center: { x: (p0.x + p2.x)/2, y: (p0.y + p2.y)/2 - h }, base: p2 };
+}
+function cylinder(ctx, x, y, r, h, col) {
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x + h*.4, y + 2, r*1.1, r*.5, 0, 0, 7); ctx.fill();
+  const g = ctx.createLinearGradient(x - r, 0, x + r, 0); g.addColorStop(0, shade(col, -.1)); g.addColorStop(.35, shade(col, .2)); g.addColorStop(1, shade(col, -.45));
+  ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x - r, y); ctx.lineTo(x - r, y - h); ctx.ellipse(x, y - h, r, r*.5, 0, Math.PI, 0); ctx.lineTo(x + r, y); ctx.ellipse(x, y, r, r*.5, 0, 0, Math.PI); ctx.fill();
+  ctx.fillStyle = shade(col, .25); ctx.beginPath(); ctx.ellipse(x, y - h, r, r*.5, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.stroke();
+}
+function tank(ctx, x, y, ang, team, S, sc = 1, heavy = false) {
+  ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x + 5, y + 5, 20*sc, 10*sc, 0, 0, 7); ctx.fill();
+  if (S.hover) { const g = ctx.createRadialGradient(x, y+4, 2, x, y+4, 24*sc); g.addColorStop(0, S.hoverGlow); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y+4, 26*sc, 13*sc, 0, 0, 7); ctx.fill(); y -= 6; }
+  ctx.translate(x, y); ctx.scale(sc, sc * .62); ctx.rotate(ang);
+  const L = heavy ? 20 : 16, Wd = heavy ? 15 : 12;
+  if (!S.hover) { ctx.fillStyle = '#262a2e'; ctx.fillRect(-L, -Wd - 2, L*2, Wd*2 + 4); }
+  ctx.fillStyle = team; ctx.fillRect(-L + 3, -Wd + 2, L*2 - 6, Wd*2 - 4);
+  ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(-L + 3, -Wd + 2, L*2 - 6, 4);
+  ctx.fillStyle = '#1d2024'; ctx.fillRect(4, heavy ? -6 : -2, 24, 4); if (heavy) ctx.fillRect(4, 2, 24, 4);
+  ctx.fillStyle = shade(team, .15); ctx.beginPath(); ctx.arc(0, 0, heavy ? 9 : 7.5, 0, 7); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.stroke();
+  ctx.restore();
+}
+function soldier(ctx, x, y, team) {
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x + 2, y + 1, 5, 2.5, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = team; ctx.fillRect(x - 2, y - 9, 4, 9); ctx.fillStyle = '#d8b48f'; ctx.beginPath(); ctx.arc(x, y - 11, 2.4, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#222'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x + 1, y - 6); ctx.lineTo(x + 7, y - 8); ctx.stroke();
+}
+function jet(ctx, x, y, ang, team) {
+  for (const [ox, oy, col] of [[40, 70, 'rgba(0,0,0,.28)'], [0, 0, team]]) {
+    ctx.save(); ctx.translate(x + ox, y + oy); ctx.rotate(ang); ctx.fillStyle = col;
+    ctx.beginPath(); ctx.moveTo(22, 0); ctx.lineTo(-10, -16); ctx.lineTo(-4, 0); ctx.lineTo(-10, 16); ctx.closePath(); ctx.fill();
+    ctx.fillRect(-16, -2.5, 30, 5); ctx.restore();
+  }
+}
+function selectBox(ctx, x, y, s, hp) {
+  ctx.strokeStyle = '#8cff8c'; ctx.lineWidth = 1.5; const c = 6;
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy]) => { ctx.beginPath(); ctx.moveTo(x + sx*s, y + sy*s*.7 - sy*c); ctx.lineTo(x + sx*s, y + sy*s*.7); ctx.lineTo(x + sx*s - sx*c, y + sy*s*.7); ctx.stroke(); });
+  ctx.fillStyle = '#111'; ctx.fillRect(x - 15, y - s*.7 - 9, 30, 5);
+  ctx.fillStyle = hp > .6 ? '#5fe35f' : hp > .3 ? '#f2d24a' : '#f04a3a'; ctx.fillRect(x - 14, y - s*.7 - 8, 28 * hp, 3);
+}
+function boom(ctx, x, y, r) {
+  for (let i = 0; i < 5; i++) { ctx.fillStyle = `rgba(60,60,60,${.35 - i*.05})`; ctx.beginPath(); ctx.arc(x + i*6 - 8, y - r*.6 - i*12, r*.45 + i*3, 0, 7); ctx.fill(); }
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, '#fff8d0'); g.addColorStop(.25, '#ffd24a'); g.addColorStop(.6, 'rgba(255,110,20,.85)'); g.addColorStop(1, 'rgba(255,60,0,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+}
+function tracer(ctx, x1, y1, x2, y2, col, w = 2) { ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = w; ctx.shadowColor = col; ctx.shadowBlur = 8; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.restore(); }
+function bolt(ctx, x1, y1, x2, y2, col, R) {
+  ctx.save(); ctx.strokeStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 16;
+  for (let k = 0; k < 2; k++) { ctx.lineWidth = k ? 1.2 : 3; ctx.globalAlpha = k ? 1 : .6; ctx.beginPath(); ctx.moveTo(x1, y1);
+    for (let i = 1; i < 9; i++) { const t = i / 9; ctx.lineTo(x1 + (x2 - x1)*t + (R() - .5)*18, y1 + (y2 - y1)*t + (R() - .5)*18); } ctx.lineTo(x2, y2); ctx.stroke(); }
+  ctx.restore();
+}
+function tree(ctx, x, y, S, R) {
+  const s = .8 + R()*.5;
+  ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(x + 8*s, y + 2, 12*s, 5*s, 0, 0, 7); ctx.fill();
+  if (S.pine) { ctx.fillStyle = S.tree; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(x, y - 34*s + i*9*s); ctx.lineTo(x - (7 + i*3)*s, y - 14*s + i*7*s); ctx.lineTo(x + (7 + i*3)*s, y - 14*s + i*7*s); ctx.fill(); }
+    ctx.fillStyle = '#f4f7f9'; ctx.beginPath(); ctx.moveTo(x, y - 34*s); ctx.lineTo(x - 4*s, y - 26*s); ctx.lineTo(x + 4*s, y - 26*s); ctx.fill(); return; }
+  ctx.fillStyle = '#4a3726'; ctx.fillRect(x - 1.5, y - 10*s, 3, 10*s);
+  ctx.fillStyle = S.tree; ctx.beginPath(); ctx.arc(x, y - 16*s, 10*s, 0, 7); ctx.fill();
+  ctx.fillStyle = shade(S.tree, .15); ctx.beginPath(); ctx.arc(x - 3*s, y - 19*s, 5*s, 0, 7); ctx.fill();
+}
+function crystal(ctx, x, y, col, R) {
+  const n = 3 + (R()*3|0);
+  for (let i = 0; i < n; i++) { const dx = (R() - .5)*14, h = 6 + R()*10, w = 2.5 + R()*2;
+    ctx.fillStyle = shade(col, R()*.4 - .1); ctx.beginPath(); ctx.moveTo(x + dx, y - h); ctx.lineTo(x + dx + w, y); ctx.lineTo(x + dx - w, y); ctx.closePath(); ctx.fill(); }
+}
+
+function drawBattle(canvas, S) {
+  const ctx = canvas.getContext('2d'); const R = rng(S.seed);
+  const OX = VW / 2, OY = -300;
+  const iso = (i, j) => ({ x: OX + (i - j)*TW/2, y: OY + (i + j)*TH/2 });
+  ctx.save(); ctx.beginPath(); ctx.rect(0, 0, VW, H); ctx.clip();
+  ctx.fillStyle = S.ground[0]; ctx.fillRect(0, 0, VW, H);
+  // tiles
+  for (let i = 0; i < 70; i++) for (let j = 0; j < 70; j++) {
+    const p = iso(i, j); if (p.x < -TW || p.x > VW + TW || p.y < -TH || p.y > H + TH) continue;
+    ctx.fillStyle = S.ground[(R()*S.ground.length)|0];
+    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + TW/2, p.y + TH/2); ctx.lineTo(p.x, p.y + TH); ctx.lineTo(p.x - TW/2, p.y + TH/2); ctx.closePath(); ctx.fill();
+    if (S.grid) { ctx.strokeStyle = S.grid; ctx.lineWidth = 1; ctx.stroke(); }
+  }
+  // patches
+  for (let k = 0; k < 26; k++) { ctx.fillStyle = S.patch; ctx.globalAlpha = .35 + R()*.3; ctx.beginPath(); ctx.ellipse(R()*VW, R()*H, 40 + R()*90, 20 + R()*40, 0, 0, 7); ctx.fill(); }
+  ctx.globalAlpha = 1;
+  // river / chasm
+  if (S.river) { ctx.save(); ctx.strokeStyle = S.river; ctx.lineWidth = 46; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-20, 150); ctx.bezierCurveTo(200, 120, 260, 240, 420, 200); ctx.bezierCurveTo(520, 175, 560, 60, 640, -20); ctx.stroke();
+    ctx.strokeStyle = S.riverHi; ctx.lineWidth = 3; ctx.setLineDash([12, 14]); ctx.stroke(); ctx.restore();
+    // bridge
+    isoBox(ctx, 430, 168, 1.2, 0.7, 6, S.bridge); }
+  // road
+  ctx.save(); ctx.strokeStyle = S.road; ctx.lineWidth = 30; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.globalAlpha = .85;
+  ctx.beginPath(); ctx.moveTo(60, 700); ctx.lineTo(300, 580); ctx.lineTo(520, 450); ctx.lineTo(760, 300); ctx.lineTo(1060, 160); ctx.stroke();
+  if (S.roadGlow) { ctx.globalAlpha = 1; ctx.strokeStyle = S.roadGlow; ctx.lineWidth = 2; ctx.shadowColor = S.roadGlow; ctx.shadowBlur = 10; ctx.stroke(); }
+  if (S.tracks) { ctx.globalAlpha = .5; ctx.strokeStyle = S.tracks; ctx.lineWidth = 3; ctx.setLineDash([4, 3]);
+    for (const off of [-9, 9]) { ctx.beginPath(); ctx.moveTo(60, 700 + off); ctx.lineTo(300, 580 + off); ctx.lineTo(520, 450 + off); ctx.lineTo(760, 300 + off); ctx.lineTo(1060, 160 + off); ctx.stroke(); } }
+  ctx.restore();
+  // craters
+  for (const [x, y, r] of [[690, 300, 22], [735, 250, 16], [640, 350, 12], [790, 330, 18]]) { ctx.fillStyle = 'rgba(20,15,10,.55)'; ctx.beginPath(); ctx.ellipse(x, y, r, r*.5, 0, 0, 7); ctx.fill(); }
+  // ore field
+  for (let k = 0; k < 70; k++) { const a = R()*6.28, d = Math.sqrt(R())*95; const x = 610 + Math.cos(a)*d*1.5, y = 590 + Math.sin(a)*d*.7;
+    if (S.oreCrystal) crystal(ctx, x, y, R() < .2 ? S.gem : S.ore, R);
+    else { ctx.fillStyle = R() < .15 ? S.gem : S.ore; ctx.beginPath(); ctx.ellipse(x, y, 3 + R()*4, 2 + R()*2, 0, 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(x - 1, y - 1.5, 2, 1.5); } }
+  // oil derrick (neutral, captured by player)
+  const drawables = [];
+  const add = (key, fn) => drawables.push({ key, fn });
+  // flora
+  for (let k = 0; k < 34; k++) { const x = R()*VW, y = R()*H;
+    const inBase = (x < 560 && y > 330) || (x > 760 && y < 230) || (x > 540 && x < 820 && y > 200 && y < 470) || (y > 500 && x > 470 && x < 780);
+    if (inBase) continue; if (S.noTrees) add(y, () => crystal(ctx, x, y, S.rock, R)); else add(y, () => tree(ctx, x, y, S, R)); }
+
+  const P = S.p, En = S.e, B = S.bld;
+  // ---- player base ----
+  add(470, () => { const b = isoBox(ctx, 250, 350, 3, 3, 44, B, { stripe: P, glow: S.bGlow }); // construction yard w/ crane
+    ctx.strokeStyle = '#d9b43a'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(b.center.x + 10, b.center.y); ctx.lineTo(b.center.x + 10, b.center.y - 46); ctx.lineTo(b.center.x - 50, b.center.y - 40); ctx.stroke();
+    ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(b.center.x - 44, b.center.y - 40); ctx.lineTo(b.center.x - 44, b.center.y - 18); ctx.stroke(); });
+  add(505, () => { const b = isoBox(ctx, 110, 430, 2, 2, 34, B, { stripe: P, glow: S.bGlow }); cylinder(ctx, b.center.x - 10, b.center.y + 4, 6, 26, shade(B, -.1)); cylinder(ctx, b.center.x + 12, b.center.y + 10, 6, 22, shade(B, -.1));
+    if (!S.hover) for (let i = 0; i < 4; i++) { ctx.fillStyle = `rgba(210,210,210,${.35 - i*.07})`; ctx.beginPath(); ctx.arc(b.center.x - 10 + i*7, b.center.y - 30 - i*12, 6 + i*3, 0, 7); ctx.fill(); } });
+  add(420, () => { const b = isoBox(ctx, 120, 300, 2, 2, 28, B, { stripe: P, glow: S.bGlow }); ctx.strokeStyle = '#ddd'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(b.center.x, b.center.y); ctx.lineTo(b.center.x, b.center.y - 30); ctx.stroke(); ctx.fillStyle = P; ctx.fillRect(b.center.x, b.center.y - 30, 16, 10); });
+  add(620, () => { const b = isoBox(ctx, 330, 500, 3, 2, 30, B, { stripe: P, glow: S.bGlow }); cylinder(ctx, b.base.x + 40, b.base.y - 20, 14, 30, shade(B, .05)); });
+  add(560, () => { isoBox(ctx, 470, 390, 3, 3, 38, B, { stripe: P, door: true, glow: S.bGlow }); });
+  add(430, () => { const b = isoBox(ctx, 560, 350, 1, 1, 16, shade(B, -.1), { stripe: P }); ctx.fillStyle = P; ctx.beginPath(); ctx.arc(b.center.x, b.center.y + 2, 7, 0, 7); ctx.fill(); ctx.fillStyle = '#222'; ctx.fillRect(b.center.x, b.center.y, 16, 3); });
+  add(660, () => { const b = isoBox(ctx, 200, 580, 2, 1, 22, B, { stripe: P }); ctx.strokeStyle = '#bbb'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(b.center.x, b.center.y - 12, 12, 6, -.4, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.moveTo(b.center.x, b.center.y - 12); ctx.lineTo(b.center.x, b.center.y); ctx.stroke(); });
+  // oil derrick
+  add(680, () => { const x = 860, y = 640; ctx.strokeStyle = '#555'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - 14, y); ctx.lineTo(x, y - 50); ctx.lineTo(x + 14, y); ctx.moveTo(x - 9, y - 18); ctx.lineTo(x + 9, y - 18); ctx.moveTo(x - 5, y - 34); ctx.lineTo(x + 5, y - 34); ctx.stroke();
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.ellipse(x + 26, y - 4, 16, 7, 0, 0, 7); ctx.fill(); ctx.fillStyle = P; ctx.fillRect(x - 3, y - 64, 14, 8); ctx.font = '600 11px "JetBrains Mono", monospace'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.75)'; ctx.strokeText('OIL +300/min', x - 36, y + 20); ctx.fillStyle = '#fff'; ctx.fillText('OIL +300/min', x - 36, y + 20); });
+  // harvester
+  add(612, () => { tank(ctx, 560, 612, -.3, shade(S.harv, 0), S, 1.25, true); selectBox(ctx, 560, 606, 26, .8); });
+  // ---- enemy base ----
+  add(120, () => { isoBox(ctx, 900, 20, 2, 2, 34, B, { stripe: En, glow: S.bGlow }); });
+  add(170, () => { isoBox(ctx, 990, 90, 3, 2, 30, B, { stripe: En, door: true, glow: S.bGlow }); });
+  add(200, () => { for (let k = 0; k < 7; k++) isoBox(ctx, 760 + k*20, 170 - k*10, .6, .6, 18, shade(B, -.2)); });
+  add(215, () => { // defense tower (tesla / prism / flak)
+    const x = 845, y = 215; cylinder(ctx, x, y, 11, 46, S.towerCol); ctx.fillStyle = S.towerTop; ctx.beginPath(); ctx.arc(x, y - 56, 10, 0, 7); ctx.fill();
+    ctx.save(); ctx.shadowColor = S.boltCol; ctx.shadowBlur = 20; ctx.fillStyle = S.boltCol; ctx.beginPath(); ctx.arc(x, y - 56, 5, 0, 7); ctx.fill(); ctx.restore(); });
+  // ---- units ----
+  const playerTanks = [[590, 390, -.5], [630, 360, -.55], [600, 440, -.45], [660, 395, -.5], [700, 350, -.6], [650, 440, -.5]];
+  playerTanks.forEach(([x, y, a], i) => add(y, () => { tank(ctx, x, y, a, P, S, 1, i === 4); if (i < 5) selectBox(ctx, x, y - 4, 22, [1, .9, .7, 1, .45][i]); }));
+  const enemyTanks = [[770, 245, 2.5], [810, 280, 2.6], [750, 205, 2.55], [860, 300, 2.7]];
+  enemyTanks.forEach(([x, y, a], i) => add(y, () => tank(ctx, x, y, a, En, S, 1, i === 0)));
+  for (let k = 0; k < 9; k++) { const x = 540 + (k % 3)*14 + (k / 3|0)*10, y = 480 + (k / 3|0)*12 - (k % 3)*6; add(y, () => soldier(ctx, x, y, P)); }
+  for (let k = 0; k < 6; k++) { const x = 880 + (k % 3)*12, y = 250 + (k / 3|0)*12; add(y, () => soldier(ctx, x, y, En)); }
+  drawables.sort((a, b) => a.key - b.key).forEach(d => d.fn());
+  // ---- combat effects ----
+  tracer(ctx, 718, 340, 760, 250, S.shot, 2.2); tracer(ctx, 644, 355, 742, 212, S.shot, 1.6);
+  tracer(ctx, 768, 250, 700, 345, S.enemyShot, 1.8);
+  bolt(ctx, 845, 159, 704, 348, S.boltCol, R);
+  boom(ctx, 812, 282, 30); boom(ctx, 700, 345, 18); boom(ctx, 756, 206, 14);
+  // air units
+  if (S.air === 'jet') { jet(ctx, 520, 180, -.62, P); jet(ctx, 470, 214, -.62, P); }
+  if (S.air === 'drone') for (let k = 0; k < 6; k++) { const x = 500 + (k%3)*22, y = 200 + (k/3|0)*18 - (k%3)*8; ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x + 30, y + 60, 6, 3, 0, 0, 7); ctx.fill();
+    ctx.save(); ctx.shadowColor = P; ctx.shadowBlur = 10; ctx.fillStyle = P; ctx.beginPath(); ctx.moveTo(x + 7, y); ctx.lineTo(x, y - 5); ctx.lineTo(x - 7, y); ctx.lineTo(x, y + 5); ctx.fill(); ctx.restore(); }
+  if (S.air === 'plane') { ctx.save(); ctx.globalAlpha = .9; jet(ctx, 330, 150, -.2, shade(P, -.1)); ctx.restore(); }
+  // drag selection rectangle
+  ctx.save(); ctx.strokeStyle = '#8cff8c'; ctx.setLineDash([5, 4]); ctx.lineWidth = 1; ctx.strokeRect(565, 330, 160, 130); ctx.fillStyle = 'rgba(140,255,140,.05)'; ctx.fillRect(565, 330, 160, 130); ctx.restore();
+  // move order marker
+  ctx.strokeStyle = '#8cff8c'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(770, 240, 16, 8, 0, 0, 7); ctx.stroke();
+  // tint / weather
+  if (S.tint) { ctx.fillStyle = S.tint; ctx.fillRect(0, 0, VW, H); }
+  if (S.snow) { const Rs = rng(99); ctx.fillStyle = 'rgba(255,255,255,.75)'; for (let k = 0; k < 260; k++) { ctx.beginPath(); ctx.arc(Rs()*VW, Rs()*H, Rs()*1.6 + .4, 0, 7); ctx.fill(); } }
+  // shroud
+  const sh = document.createElement('canvas'); sh.width = VW; sh.height = H; const sc = sh.getContext('2d');
+  sc.fillStyle = '#000'; sc.fillRect(0, 0, VW, H); sc.globalCompositeOperation = 'destination-out';
+  for (const [x, y, r] of [[330, 480, 430], [650, 360, 300], [620, 600, 260], [880, 640, 180], [860, 170, 210], [980, 90, 120]]) {
+    const g = sc.createRadialGradient(x, y, r*.55, x, y, r); g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)'); sc.fillStyle = g; sc.beginPath(); sc.arc(x, y, r, 0, 7); sc.fill(); }
+  ctx.globalAlpha = .96; ctx.drawImage(sh, 0, 0); ctx.globalAlpha = 1;
+  // EVA messages
+  ctx.font = '600 14px "JetBrains Mono", monospace'; ctx.fillStyle = S.ui.accent; ctx.shadowColor = '#000'; ctx.shadowBlur = 4;
+  S.eva.forEach((m, i) => ctx.fillText(m, 16, 28 + i*20)); ctx.shadowBlur = 0;
+  ctx.restore();
+  drawSidebar(ctx, S);
+}
+
+function drawSidebar(ctx, S) {
+  const U = S.ui, x0 = VW;
+  const g = ctx.createLinearGradient(x0, 0, 1280, 0); g.addColorStop(0, U.panel2); g.addColorStop(1, U.panel);
+  ctx.fillStyle = g; ctx.fillRect(x0, 0, 240, H);
+  ctx.fillStyle = U.edge; ctx.fillRect(x0, 0, 3, H);
+  if (U.rivets) { ctx.fillStyle = U.edge; for (let y = 12; y < H; y += 40) { ctx.beginPath(); ctx.arc(x0 + 232, y, 2.5, 0, 7); ctx.fill(); } }
+  // header
+  ctx.fillStyle = U.dim; ctx.font = '600 11px "JetBrains Mono", monospace'; ctx.fillText(S.nation.toUpperCase(), x0 + 16, 22);
+  ctx.fillStyle = U.accent; ctx.font = '700 24px "JetBrains Mono", monospace'; ctx.fillText('$ ' + S.credits, x0 + 16, 50);
+  ctx.fillStyle = U.dim; ctx.font = '600 11px "JetBrains Mono", monospace'; ctx.fillText('POWER ' + S.power, x0 + 150, 48);
+  // minimap
+  const mx = x0 + 14, my = 62, mw = 212, mh = 150;
+  ctx.fillStyle = '#000'; ctx.fillRect(mx - 2, my - 2, mw + 4, mh + 4);
+  ctx.fillStyle = S.ground[1]; ctx.fillRect(mx, my, mw, mh);
+  const R = rng(7);
+  for (let k = 0; k < 16; k++) { ctx.fillStyle = S.patch; ctx.globalAlpha = .5; ctx.beginPath(); ctx.arc(mx + R()*mw, my + R()*mh, 6 + R()*10, 0, 7); ctx.fill(); } ctx.globalAlpha = 1;
+  if (S.river) { ctx.strokeStyle = S.river; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(mx, my + 60); ctx.quadraticCurveTo(mx + 90, my + 70, mx + 130, my); ctx.stroke(); }
+  for (const [ox, oy] of [[90, 120], [160, 40], [40, 60], [180, 130]]) { ctx.fillStyle = S.ore; ctx.globalAlpha = .9; ctx.beginPath(); ctx.arc(mx + ox, my + oy, 7, 0, 7); ctx.fill(); } ctx.globalAlpha = 1;
+  const dots = (cx, cy, n, col, spread) => { ctx.fillStyle = col; for (let k = 0; k < n; k++) ctx.fillRect(mx + cx + (R() - .5)*spread, my + cy + (R() - .5)*spread*.8, 3, 3); };
+  dots(40, 115, 26, S.p, 44); dots(90, 80, 10, S.p, 20); dots(175, 30, 22, S.e, 40); dots(115, 65, 6, S.e, 16);
+  ctx.fillStyle = 'rgba(0,0,0,.85)'; ctx.beginPath(); ctx.moveTo(mx + 120, my); ctx.lineTo(mx + mw, my); ctx.lineTo(mx + mw, my + 100); ctx.quadraticCurveTo(mx + 200, my + 20, mx + 150, my + 40); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.2; ctx.strokeRect(mx + 55, my + 50, 78, 54);
+  // tabs
+  const tabs = ['BLD', 'DEF', 'INF', 'VEH'];
+  tabs.forEach((t, i) => { const tx = x0 + 14 + i*54; ctx.fillStyle = i === 3 ? U.accent : U.tab; ctx.fillRect(tx, 226, 50, 24);
+    ctx.fillStyle = i === 3 ? U.accentInk : U.text; ctx.font = '700 12px "JetBrains Mono", monospace'; ctx.fillText(t, tx + 12, 243); });
+  // power bar
+  ctx.fillStyle = '#0c0c0c'; ctx.fillRect(x0 + 5, 262, 7, 440);
+  const pg = ctx.createLinearGradient(0, 702, 0, 262); pg.addColorStop(0, '#3fbf4a'); pg.addColorStop(.7, '#d9c23a'); pg.addColorStop(1, '#d9453a');
+  ctx.fillStyle = pg; ctx.fillRect(x0 + 6, 262 + 440*.28, 5, 440*.72 - 1); ctx.fillStyle = '#fff'; ctx.fillRect(x0 + 3, 262 + 440*.38, 11, 2);
+  // build icons
+  S.build.forEach((item, i) => {
+    const bx = x0 + 18 + (i % 2)*106, by = 262 + (i / 2|0)*110, bw = 100, bh = 102;
+    const ig = ctx.createLinearGradient(0, by, 0, by + bh); ig.addColorStop(0, U.icon); ig.addColorStop(1, shade(U.icon, -.45));
+    ctx.fillStyle = ig; ctx.fillRect(bx, by, bw, bh); ctx.strokeStyle = U.edge; ctx.lineWidth = 1; ctx.strokeRect(bx + .5, by + .5, bw - 1, bh - 1);
+    ctx.save(); ctx.beginPath(); ctx.rect(bx, by, bw, bh); ctx.clip();
+    const cx = bx + 50, cy = by + 58;
+    if (item.k === 'tank') tank(ctx, cx, cy, -.5, S.p, { hover: S.hover, hoverGlow: S.hoverGlow }, 1.5, item.heavy);
+    else if (item.k === 'inf') { soldier(ctx, cx - 8, cy + 8, S.p); soldier(ctx, cx + 8, cy + 4, S.p); }
+    else if (item.k === 'air') jet(ctx, cx - 6, cy - 12, -.6, S.p);
+    else isoBox(ctx, cx, cy - 26, 1.2, 1.2, 24, S.bld, { stripe: S.p });
+    ctx.restore();
+    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(bx, by + bh - 20, bw, 20);
+    ctx.fillStyle = U.text; ctx.font = '600 11px "IBM Plex Sans", sans-serif'; ctx.fillText(item.n, bx + 6, by + bh - 6);
+    ctx.fillStyle = U.accent; ctx.font = '600 10px "JetBrains Mono", monospace'; ctx.fillText('$' + item.c, bx + 6, by + 14);
+    if (item.prog) { ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.beginPath(); ctx.moveTo(cx, by + 45); ctx.arc(cx, by + 45, 70, -Math.PI/2 + item.prog*6.283, -Math.PI/2 + 6.283); ctx.closePath(); ctx.save(); ctx.clip(); ctx.fillRect(bx, by, bw, bh - 20); ctx.restore();
+      ctx.fillStyle = '#fff'; ctx.font = '700 12px "JetBrains Mono", monospace'; ctx.fillText(Math.round(item.prog*100) + '%', bx + 66, by + 14); }
+    if (item.ready) { ctx.fillStyle = U.accent; ctx.font = '700 15px "Chakra Petch", sans-serif'; ctx.fillText('READY', bx + 28, by + 50); }
+    if (item.q) { ctx.fillStyle = '#fff'; ctx.font = '700 12px "JetBrains Mono", monospace'; ctx.fillText('×' + item.q, bx + 76, by + 14); }
+  });
+}
+
+const SCENES = {
+  A: { seed: 11, nation: 'Atlantic Alliance', credits: '12,450', power: '240/180',
+    ground: ['#5d7d3c', '#638543', '#587638', '#6a8a47'], patch: '#7a6a45', grid: 'rgba(0,0,0,.05)', tree: '#35602a',
+    river: '#2e6a93', riverHi: 'rgba(255,255,255,.3)', bridge: '#8a7a64', road: '#8b7b5c', tracks: '#5a4a34',
+    ore: '#d9ae36', gem: '#d45cc8', rock: '#777', bld: '#9aa0a6', p: '#3d7fe0', e: '#d8412f', harv: '#6f7f8f',
+    towerCol: '#5e6168', towerTop: '#8cd8ff', boltCol: '#9be7ff', shot: '#ffe27a', enemyShot: '#ff9a6a', air: 'jet',
+    eva: ['> Unit ready', '> Enemy Tesla Coil detected'],
+    ui: { panel: '#2b3035', panel2: '#3b4148', edge: '#6d757e', tab: '#4a525b', text: '#e9edf0', dim: '#a8b0b8', accent: '#f0b43a', accentInk: '#1a1204', icon: '#56606b' },
+    build: [{ n: 'Grizzly MBT', c: 900, k: 'tank', prog: .62 }, { n: 'Bulldog IFV', c: 600, k: 'tank', q: 2 }, { n: 'Harvester', c: 1400, k: 'tank', heavy: true }, { n: 'Warhawk', c: 1200, k: 'air', ready: true }, { n: 'Nightjar', c: 2000, k: 'air' }, { n: 'MCV', c: 3000, k: 'bld' }, { n: 'Rangers', c: 100, k: 'inf' }, { n: 'Javelin', c: 300, k: 'inf' }] },
+  B: { seed: 23, nation: 'Nova Syndicate', credits: '8,320', power: '410/520', hover: true, hoverGlow: 'rgba(160,130,255,.75)',
+    ground: ['#262b33', '#2a3039', '#23282f', '#2d333c'], patch: '#1a1e24', grid: 'rgba(120,200,255,.07)', noTrees: true, rock: '#4b5360',
+    road: '#1b2027', roadGlow: '#45d4ff', ore: '#44e0ff', gem: '#c46cff', oreCrystal: true, bld: '#5c6470', bGlow: '#45d4ff',
+    p: '#8a6cf0', e: '#e08a2c', harv: '#8a6cf0', towerCol: '#4d4540', towerTop: '#ffb35a', boltCol: '#ff9a3a', shot: '#b9a4ff', enemyShot: '#ffae5a', air: 'drone',
+    eva: ['> Shields at 80%', '> Low power: reactor needed'],
+    ui: { panel: '#0f141b', panel2: '#18202b', edge: '#2d6d86', tab: '#1c2833', text: '#d4ecf7', dim: '#6fa6bb', accent: '#45d4ff', accentInk: '#04141b', icon: '#23303d' },
+    build: [{ n: 'Lancer', c: 1100, k: 'tank', prog: .35 }, { n: 'Prism Tank', c: 1400, k: 'tank', heavy: true }, { n: 'Mirage', c: 1250, k: 'tank', q: 1 }, { n: 'Specter', c: 1800, k: 'air', ready: true }, { n: 'Aegis Walker', c: 1600, k: 'tank', heavy: true }, { n: 'Extractor', c: 1500, k: 'tank' }, { n: 'Pulse Trp.', c: 250, k: 'inf' }, { n: 'Drones ×6', c: 600, k: 'air' }] },
+  C: { seed: 37, nation: 'Jade Dynasty', credits: '6,780', power: '150/120', snow: true,
+    ground: ['#dfe4e8', '#e8ecef', '#d6dce1', '#eef1f3'], patch: '#b9c2c8', grid: 'rgba(0,0,0,.03)', tree: '#2f4a3a', pine: true,
+    river: '#9fb8c8', riverHi: 'rgba(255,255,255,.7)', bridge: '#6b5a48', road: '#8a7866', tracks: '#5b4a3a',
+    ore: '#c9772e', gem: '#e0b04a', bld: '#8f8a80', p: '#6f7d3a', e: '#8e2f3a', harv: '#6f7d3a',
+    towerCol: '#5a5048', towerTop: '#ffcf7a', boltCol: '#ffd27a', shot: '#fff0b0', enemyShot: '#ffb08a', air: 'plane', tint: 'rgba(120,90,40,.08)',
+    eva: ['> Reinforcements have arrived', '> Our harvester is under attack'],
+    ui: { panel: '#2a221b', panel2: '#3d3226', edge: '#b58a4a', tab: '#4c3e2e', text: '#f2e6d0', dim: '#c7ad84', accent: '#e8b45a', accentInk: '#221806', icon: '#5a4a38', rivets: true },
+    build: [{ n: 'Battlemaster', c: 700, k: 'tank', prog: .8 }, { n: 'Overlord', c: 2000, k: 'tank', heavy: true }, { n: 'Inferno Cnn.', c: 900, k: 'tank' }, { n: 'Helix', c: 1500, k: 'air', ready: true }, { n: 'Harvester', c: 1200, k: 'tank', heavy: true, q: 1 }, { n: 'MCV', c: 3000, k: 'bld' }, { n: 'Red Guard ×2', c: 300, k: 'inf' }, { n: 'Tank Hunter', c: 300, k: 'inf' }] }
+};
+function renderShots() { drawBattle(document.getElementById('shotA'), SCENES.A); drawBattle(document.getElementById('shotB'), SCENES.B); drawBattle(document.getElementById('shotC'), SCENES.C); }
+(document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(renderShots, renderShots);
+</script>
