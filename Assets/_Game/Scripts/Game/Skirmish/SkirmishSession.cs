@@ -15,6 +15,14 @@ namespace NationsWars.Game
             get { return LocalSlot >= 0 && LocalSlot < Economies.Count ? Economies[LocalSlot] : null; }
         }
 
+        /// <summary>Different players on different teams are enemies. Without settings, any two players are.</summary>
+        public static bool AreEnemies(int slotA, int slotB)
+        {
+            if (slotA == slotB) return false;
+            if (Settings == null || slotA < 0 || slotB < 0 || slotA >= Settings.slots.Count || slotB >= Settings.slots.Count) return true;
+            return Settings.slots[slotA].team != Settings.slots[slotB].team;
+        }
+
         static int FirstHumanSlot(SkirmishSettings settings)
         {
             for (int i = 0; i < settings.slots.Count; i++)

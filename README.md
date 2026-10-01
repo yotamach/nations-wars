@@ -14,7 +14,7 @@ The design plan with concept art is in [`docs/game-plan.html`](docs/game-plan.ht
 |---|---|
 | Left click / drag | Select unit / box select (Shift adds) |
 | Double click | Select all of that unit type on screen |
-| Right click | Move selected units (A* around the grey wall) |
+| Right click ground / enemy | Move (A* around the grey wall) / attack |
 | Ctrl+1-9, 1-9 | Save / recall control group |
 | WASD or arrows, mouse wheel | Pan, zoom |
 
@@ -35,7 +35,11 @@ Assets/_Game/
 - Damage-vs-armor table with veterancy, deterministic A* pathfinding, credits and power with oil income.
 - RTS camera, unit selection, control groups, move orders, placeholder models in team colors.
 - 1v1 skirmish start: each player's starting army is placed at opposite corners.
+- Basic combat: idle units auto-fire at enemies in range, right-click an enemy to chase and attack. Units fire only when standing still or on an attack order.
+- **Unit levels (Red Alert 2 style):** killing enemies earns XP equal to their cost. Stars come at 1.5x, 3x and 5x the unit's own cost
+  (Veteran, Elite, Heroic). Each star gives +20% damage and 20% less damage taken, and Heroic units heal 1% HP/s.
+  Stars float above the unit, and a "promoted" notice shows on the HUD. Tuning lives in `VeterancyRules` (`Simulation/Combat/Veterancy.cs`).
 
 ## Next (see the roadmap in the plan)
 
-Base building and the build sidebar, harvesters and refineries, combat (targeting, projectiles, health), fog of war, skirmish lobby, AI.
+Base building and the build sidebar, harvesters and refineries, real projectiles and effects, attack-move, fog of war, skirmish lobby, AI.

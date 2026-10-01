@@ -22,6 +22,9 @@ namespace NationsWars.Game
 
             var unit = root.AddComponent<Unit>();
             unit.Init(def, ownerSlot, ring);
+
+            float overlayHeight = def.role == UnitRole.Infantry ? 2.4f : def.role == UnitRole.Harvester ? 3.6f : 3.0f;
+            root.AddComponent<UnitOverlay>().Init(unit, overlayHeight);
             return unit;
         }
 
