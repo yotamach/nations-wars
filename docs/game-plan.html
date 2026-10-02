@@ -210,6 +210,21 @@ pre.tree { margin: 0; background: var(--panel); border: 1px solid var(--line); p
 .bi .ready { position: absolute; top: 34%; font: 700 .85em/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--hud); text-shadow: 0 0 .6em var(--hud); }
 .bi .q { position: absolute; top: 1.6em; right: .35em; font: 700 .7em/1 var(--mono); color: #fff; }
 
+
+/* ===== armies lineup ===== */
+.armies { display: grid; gap: 28px; }
+.army-block { display: grid; gap: 10px; }
+.army-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.army-title .tagline { font: 600 .78rem/1.3 var(--mono); color: var(--muted); letter-spacing: .04em; }
+.army-scroll { overflow-x: auto; border-radius: 10px; }
+.army { position: relative; aspect-ratio: 1400 / 500; min-width: 900px; container-type: inline-size; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #0b0e14; }
+.army canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.army .labels { position: absolute; left: 0; right: 0; bottom: 2.2%; height: 12%; pointer-events: none; }
+.army .ul { position: absolute; top: 0; transform: translateX(-50%); text-align: center; font-size: max(11px, 1.05cqw); line-height: 1.25; color: #eef3f8; text-shadow: 0 1px 3px #000, 0 0 8px rgba(0,0,0,.8); white-space: nowrap; }
+.army .ul b { display: block; font-family: var(--display); font-weight: 600; letter-spacing: .02em; }
+.army .ul span { display: block; font-size: .84em; color: rgba(238,243,248,.68); }
+.army .fallback { position: absolute; inset: 30% 20% auto; text-align: center; padding: 1em; background: rgba(0,0,0,.7); color: #fff; font-size: .9rem; border-radius: 8px; }
+
 @media (max-width: 560px) { .wrap { padding-inline: 16px; gap: 48px; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -352,6 +367,36 @@ pre.tree { margin: 0; background: var(--panel); border: 1px solid var(--line); p
     <figcaption>Mockup: nation select with Red Star Union highlighted.</figcaption>
   </figure>
   <div class="nations" id="nationCards"></div>
+</section>
+
+<section id="armies">
+  <div class="sec-head">
+    <span class="eyebrow">35 units</span>
+    <h2>Armies in 3D</h2>
+    <p class="muted">Every nation fields 7 units: three infantry, ground vehicles, and aircraft. Each line goes infantry first, then vehicles, then air. The models are rough concept art that show silhouettes and style, and they turn slowly.</p>
+  </div>
+  <div class="armies">
+    <figure class="army-block">
+      <div class="army-title"><h3>Atlantic Alliance</h3><span class="tagline">Air power & precision</span></div>
+      <div class="army-scroll"><div class="army" id="armyaa" data-army="aa"><canvas></canvas><div class="labels"></div></div></div>
+    </figure>
+    <figure class="army-block">
+      <div class="army-title"><h3>Red Star Union</h3><span class="tagline">Heavy armor & Tesla tech</span></div>
+      <div class="army-scroll"><div class="army" id="armyrs" data-army="rs"><canvas></canvas><div class="labels"></div></div></div>
+    </figure>
+    <figure class="army-block">
+      <div class="army-title"><h3>Jade Dynasty</h3><span class="tagline">Hordes & propaganda</span></div>
+      <div class="army-scroll"><div class="army" id="armyjd" data-army="jd"><canvas></canvas><div class="labels"></div></div></div>
+    </figure>
+    <figure class="army-block">
+      <div class="army-title"><h3>Sand Scorpion Pact</h3><span class="tagline">Guerrilla, speed & oil</span></div>
+      <div class="army-scroll"><div class="army" id="armyss" data-army="ss"><canvas></canvas><div class="labels"></div></div></div>
+    </figure>
+    <figure class="army-block">
+      <div class="army-title"><h3>Nova Syndicate</h3><span class="tagline">Drones, shields & energy</span></div>
+      <div class="army-scroll"><div class="army" id="armynv" data-army="nv"><canvas></canvas><div class="labels"></div></div></div>
+    </figure>
+  </div>
 </section>
 
 <section id="resources">
@@ -1151,5 +1196,392 @@ function initGames() {
   requestAnimationFrame(loop);
 }
 initGames();
+
+
+/* ================= Armies: 3D lineups of every unit (Three.js r128) ================= */
+(function () {
+  if (!window.THREE) return;
+  const T = THREE, PI = Math.PI;
+
+  /* ---------- helpers ---------- */
+  const MC = {};
+  function M(hex, o) {
+    o = o || {}; const k = hex + JSON.stringify(o); if (MC[k]) return MC[k];
+    const p = Object.assign({ roughness: .6, metalness: .2 }, o);
+    p.color = new T.Color(hex).convertSRGBToLinear(); if (p.emissive) p.emissive = new T.Color(p.emissive).convertSRGBToLinear();
+    return MC[k] = new T.MeshStandardMaterial(p);
+  }
+  const B = (w, h, d) => new T.BoxGeometry(w, h, d), Cy = (a, b, h, s) => new T.CylinderGeometry(a, b, h, s || 14), Sp = (r, a, b, c, d, e, f) => new T.SphereGeometry(r, a || 16, b || 12, c, d, e, f);
+  function add(par, geo, mat, x, y, z, rot, sc) {
+    const m = new T.Mesh(geo, mat); m.position.set(x || 0, y || 0, z || 0); if (rot) m.rotation.set(rot[0], rot[1], rot[2]); if (sc) m.scale.set(sc[0], sc[1], sc[2]);
+    m.castShadow = m.receiveShadow = true; par.add(m); return m;
+  }
+  const barrel = (par, mat, x0, y, z, len, r) => add(par, Cy(r, r, len, 10), mat, x0 + len / 2, y, z, [0, 0, PI / 2]);
+  let GLOW;
+  function glowTex() {
+    if (GLOW) return GLOW; const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+    const r = g.createRadialGradient(64, 64, 0, 64, 64, 64); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.2, 'rgba(255,255,255,.7)'); r.addColorStop(.5, 'rgba(255,255,255,.15)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = r; g.fillRect(0, 0, 128, 128); GLOW = new T.CanvasTexture(c); return GLOW;
+  }
+  function glow(par, col, size, x, y, z, op) {
+    const s = new T.Sprite(new T.SpriteMaterial({ map: glowTex(), color: new T.Color(col).convertSRGBToLinear(), blending: T.AdditiveBlending, depthWrite: false, transparent: true, opacity: op == null ? .9 : op, toneMapped: false }));
+    s.scale.set(size, size, 1); s.position.set(x || 0, y || 0, z || 0); par.add(s); return s;
+  }
+  const EM = (col, i) => M(col, { emissive: col, emissiveIntensity: i || 2, roughness: .3 });
+
+  /* palettes: body paint, team trim, dark parts, uniform, glow */
+  const ARMY = {
+    aa: { body: '#8c96a2', trim: '#2f7bf0', dark: '#2a2f36', uni: '#4d6a96', glow: null, rim: '#6aa8ff', floor: '#161d29', hover: false },
+    rs: { body: '#85302a', trim: '#e0513c', dark: '#2a2223', uni: '#7d2e27', glow: null, rim: '#ff6a52', floor: '#241617', hover: false },
+    jd: { body: '#58703a', trim: '#e3b84a', dark: '#262a20', uni: '#566b3c', glow: null, rim: '#6fe0a8', floor: '#14201a', hover: false },
+    ss: { body: '#b8915a', trim: '#e88a2a', dark: '#2e2820', uni: '#a98456', glow: null, rim: '#ffb35a', floor: '#241d14', hover: false },
+    nv: { body: '#383e56', trim: '#8a6cf0', dark: '#1a1d2b', uni: '#2c3047', glow: '#45d4ff', rim: '#9a86ff', floor: '#12142a', hover: true }
+  };
+  const mats = st => ({
+    body: M(st.body, { roughness: .5, metalness: .45 }), trim: M(st.trim, { roughness: .4, metalness: .4 }), dark: M(st.dark, { roughness: .8, metalness: .3 }),
+    metal: M('#737a82', { roughness: .32, metalness: .85 }), uni: M(st.uni, { roughness: .85 }), skin: M('#d6ad88', { roughness: .8 }), glassM: M('#10151c', { roughness: .08, metalness: .8 })
+  });
+
+  /* ---------- infantry ---------- */
+  function soldier(st, o) {
+    const g = new T.Group(), m = mats(st), uni = o.uniform ? M(o.uniform, { roughness: .85 }) : m.uni, blk = M('#1e2024', { roughness: .9 });
+    add(g, B(.2, .5, .24), m.dark, -.12, .25, 0); add(g, B(.2, .5, .24), m.dark, .12, .25, 0);
+    add(g, B(.42, .5, .3), uni, 0, .75, 0); add(g, B(.45, .09, .33), m.trim, 0, .56, 0);
+    add(g, B(.13, .4, .15), uni, 0, .76, .27, [0, 0, 0]); add(g, B(.13, .4, .15), uni, .12, .78, -.27, [0, 0, -.9]);
+    add(g, Sp(.14, 12, 10), m.skin, 0, 1.08, 0);
+    const h = o.helm || 'helmet';
+    if (h === 'helmet') add(g, Sp(.17, 12, 8, 0, PI * 2, 0, PI / 2), m.dark, 0, 1.11, 0, 0, [1, .75, 1]);
+    if (h === 'ushanka') { add(g, Cy(.17, .18, .13, 12), M('#4a3a30', { roughness: 1 }), 0, 1.2, 0); add(g, Sp(.03), M('#e0513c', { emissive: '#e0513c', emissiveIntensity: 1 }), .15, 1.22, 0); }
+    if (h === 'cap') { add(g, Cy(.16, .16, .09, 12), uni, 0, 1.19, 0); add(g, B(.14, .02, .2), uni, .16, 1.15, 0); add(g, Sp(.03), M('#e3b84a', { emissive: '#e3b84a', emissiveIntensity: 1.2 }), .15, 1.2, 0); }
+    if (h === 'cloth') { add(g, Sp(.17, 12, 10), M('#d9ccb0', { roughness: 1 }), 0, 1.1, 0, 0, [1, .85, 1]); add(g, B(.34, .06, .34), M('#a23a2a', { roughness: 1 }), 0, 1.04, 0); }
+    if (h === 'hood') { add(g, Sp(.18, 12, 10), blk, 0, 1.09, 0, 0, [1, 1, 1]); add(g, B(.02, .05, .16), EM('#ff3b2a', 1.5), .15, 1.1, 0); }
+    if (h === 'visor') { add(g, Sp(.17, 12, 8, 0, PI * 2, 0, PI / 2), m.dark, 0, 1.11, 0, 0, [1, .8, 1]); add(g, B(.04, .06, .26), EM(st.glow || '#45d4ff', 2.5), .14, 1.1, 0); }
+    const w = o.weapon;
+    if (w === 'rifle' || w === 'smg') { const L = w === 'rifle' ? .78 : .5; barrel(g, blk, .1, .78, .2, L, .025); add(g, B(.28, .1, .06), blk, .0, .76, .2); if (w === 'smg') add(g, B(.05, .2, .05), blk, .18, .64, .2); if (w === 'rifle') add(g, B(.3, .1, .07), M('#5a4430', { roughness: .8 }), -.12, .74, .2); }
+    if (w === 'rpg') { add(g, Cy(.07, .07, 1, 10), m.dark, .1, 1.0, .28, [0, 0, PI / 2]); add(g, Sp(.13, 10, 8), m.trim, .62, 1.0, .28); add(g, B(.2, .07, .07), m.metal, .0, 1.1, .28); }
+    if (w === 'bazooka') { add(g, Cy(.09, .09, 1.15, 10), m.dark, .05, 1.0, .28, [0, 0, PI / 2]); add(g, Cy(.09, .14, .12, 10), m.metal, .66, 1.0, .28, [0, 0, PI / 2]); add(g, Cy(.14, .09, .1, 10), m.metal, -.52, 1.0, .28, [0, 0, PI / 2]); add(g, B(.12, .1, .1), m.metal, .1, 1.13, .28); }
+    if (w === 'javelin') { add(g, Cy(.1, .1, .95, 10), M('#c8ccd1', { roughness: .5, metalness: .3 }), .08, 1.08, .26, [0, 0, PI / 2]); add(g, B(.22, .16, .14), m.dark, .2, 1.22, .26); add(g, Sp(.05), EM('#8fe6ff', 3), .3, 1.24, .26); add(g, Cy(.015, .015, .5, 4), blk, -.1, .5, .26, [0, 0, .2]); add(g, B(.4, .5, .18), m.dark, -.12, .8, -.24); add(g, Cy(.07, .07, .4, 8), M('#c8ccd1', { roughness: .5 }), -.1, 1.1, -.24, [0, 0, PI / 2]); }
+    if (w === 'sniper') { barrel(g, blk, .1, .78, .2, 1.15, .022); add(g, Cy(.04, .04, .3, 8), m.dark, .28, .84, .2, [0, 0, PI / 2]); add(g, B(.34, .1, .07), M('#4f3e2c', { roughness: .8 }), -.15, .74, .2); add(g, Cy(.01, .01, .35, 4), blk, .7, .66, .2, [.3, 0, 0]);
+      const gil = M('#4d5a36', { roughness: 1 }); for (let i = 0; i < 9; i++) add(g, B(.14 + (i % 3) * .04, .12, .14), i % 2 ? gil : M('#6a6a3c', { roughness: 1 }), -.1 + (i % 3) * .08 - .05, 1 - (i % 4) * .17, -.2 + (i % 2) * .1, [i * .3, i, i * .2]); }
+    if (w === 'flak') { add(g, Cy(.06, .13, .55, 10), blk, .4, 1.0, .26, [0, 0, 1.1]); add(g, Cy(.05, .05, .35, 8), blk, .12, .85, .26, [0, 0, PI / 2]); add(g, Cy(.16, .16, .2, 10), m.metal, -.05, .78, -.24); add(g, B(.2, .06, .06), blk, .05, .95, .26); }
+    if (w === 'tesla') { add(g, Cy(.05, .05, .6, 8), m.metal, .15, .88, .26, [0, 0, PI / 2]); [0, .12, .24].forEach(i => add(g, new T.TorusGeometry(.08, .025, 6, 14), M('#b8733a', { roughness: .3, metalness: .85 }), .3 + i, .88, .26, [0, PI / 2, 0]));
+      add(g, Sp(.07), EM('#8fe6ff', 3), .66, .88, .26); glow(g, '#8fe6ff', .9, .66, .88, .26, .9);
+      add(g, Cy(.12, .12, .5, 10), m.dark, -.1, .8, -.24); [0, .2, .4].forEach(i => add(g, new T.TorusGeometry(.14, .03, 6, 14), M('#b8733a', { roughness: .3, metalness: .85 }), -.1, .6 + i, -.24, [PI / 2, 0, 0])); add(g, Sp(.09), EM('#8fe6ff', 3), -.1, 1.12, -.24); glow(g, '#8fe6ff', .7, -.1, 1.12, -.24, .9); }
+    if (w === 'hack') { add(g, B(.28, .02, .2), m.dark, .22, .8, .15, [0, 0, .5]); add(g, B(.26, .17, .02), EM('#45d4ff', 2.2), .26, .88, .14, [0, 0, .5]); add(g, B(.32, .45, .16), m.dark, -.1, .78, -.24); add(g, Cy(.01, .01, .8, 4), blk, -.18, 1.35, -.26); add(g, Cy(.01, .01, .6, 4), blk, -.02, 1.25, -.26); add(g, Sp(.025), EM('#ff3b2a', 3), -.18, 1.76, -.26); }
+    if (w === 'saboteur') { add(g, B(.12, .04, .02), m.metal, .3, .62, .2, [0, 0, 0]); add(g, B(.3, .24, .16), M('#3a3a2c', { roughness: .9 }), -.05, .62, -.26); add(g, B(.08, .03, .02), EM('#ff3b2a', 3), -.05, .72, -.18); glow(g, '#ff3b2a', .35, -.05, .73, -.18, .9); add(g, B(.34, .14, .01), M('#e0b030', { roughness: .8 }), .1, .63, .34); }
+    if (w === 'pulse') { barrel(g, m.dark, .08, .78, .2, .6, .04); add(g, Cy(.05, .05, .12, 8), EM('#45d4ff', 3), .72, .78, .2, [0, 0, PI / 2]); glow(g, '#45d4ff', .5, .75, .78, .2, .8);
+      for (const z of [-.08, .08]) { add(g, Cy(.07, .05, .3, 8), m.metal, -.1, .8, -.2 + z * 2.2 - .02); add(g, Cy(.05, .01, .22, 8), EM('#45d4ff', 3), -.1, .55, -.2 + z * 2.2 - .02); glow(g, '#45d4ff', .45, -.1, .46, -.2 + z * 2.2 - .02, .85); } }
+    g.userData.ground = 0; return g;
+  }
+
+  /* ---------- tracked / hover vehicles ---------- */
+  function chassis(g, st, m, L, W, y0, hover, wheels) {
+    if (hover) {
+      add(g, B(L * .8, .3, W * .95), m.dark, 0, y0 - .3, 0);
+      const pad = new T.Mesh(new T.CircleGeometry(Math.max(L, W) * .55, 28), new T.MeshBasicMaterial({ color: new T.Color(st.glow).convertSRGBToLinear(), transparent: true, opacity: .45, blending: T.AdditiveBlending, depthWrite: false, toneMapped: false }));
+      pad.rotation.x = -PI / 2; pad.position.y = .05; g.add(pad); glow(g, st.glow, L * 1.6, 0, .35, 0, .55);
+      for (const s of [-1, 1]) { add(g, B(L * .8, .14, .22), EM(st.glow, 2.5), -.1, y0 - .45, s * (W / 2)); }
+      return;
+    }
+    for (const s of [-1, 1]) {
+      add(g, B(L + .3, .72, .6), m.dark, 0, .42, s * (W / 2 - .05));
+      const n = wheels || 5; for (let i = 0; i < n; i++) add(g, Cy(.3, .3, .64, 12), m.metal, -L / 2 + .4 + i * (L - .8) / (n - 1), .36, s * (W / 2 - .05), [PI / 2, 0, 0]);
+      add(g, B(L + .1, .09, .72), m.body, 0, .82, s * (W / 2));
+    }
+  }
+  function tank(st, o) {
+    const g = new T.Group(), m = mats(st), hover = st.hover && !o.noHover, L = o.L || 3.6, W = o.W || 2.3, H = o.H || .7, y0 = hover ? 1.2 : .72;
+    chassis(g, st, m, L, W, y0, hover, o.wheels);
+    add(g, B(L, H, W - .25), m.body, 0, y0 + H / 2, 0);
+    add(g, B(.9, H * .8, W - .3), m.body, L / 2 - .1, y0 + H * .4, 0, [0, 0, -.6]);
+    add(g, B(L * .3, .14, W * .6), m.dark, -L * .3, y0 + H + .05, 0);
+    add(g, B(L + .02, .1, W - .22), m.trim, 0, y0 + H * .5, 0, 0, [1, .35, 1]);
+    if (o.skirts) for (const s of [-1, 1]) add(g, B(L * .9, .5, .08), m.body, 0, y0 + .15, s * (W / 2 + .08));
+    const tur = new T.Group(); tur.position.set(o.tx || -.15, y0 + H, 0); g.add(tur);
+    const T0 = o.turret || 'std', tw = o.tw || 1;
+    if (T0 === 'std') add(tur, Cy(.85 * tw, .98 * tw, .6, 8), m.body, 0, .3, 0);
+    if (T0 === 'boxy') { add(tur, B(1.9 * tw, .62, 1.7 * tw), m.body, 0, .31, 0); add(tur, B(.9, .5, 1.78 * tw), m.body, .8, .27, 0, [0, 0, -.5]); }
+    if (T0 === 'big') { add(tur, B(2.5, .75, 2.2), m.body, -.1, .37, 0); add(tur, B(1.2, .6, 2.26), m.body, 1, .3, 0, [0, 0, -.55]); add(tur, B(.8, .5, 2.2), m.dark, -1.5, .3, 0); }
+    add(tur, Cy(.22, .22, .16, 10), m.dark, -.3, .68, .35); add(tur, Sp(.15), m.trim, .1, .66, -.3);
+    const nb = o.barrels || 1, bl = o.bl || 2.4, br = o.br || .1, by = o.by == null ? .32 : o.by;
+    for (let i = 0; i < nb; i++) { const z = nb === 1 ? 0 : (i - (nb - 1) / 2) * (o.bs || .6); barrel(tur, m.metal, 1.0, by, z, bl, br); add(tur, Cy(br * 1.7, br * 1.7, .35, 10), m.dark, 1.0 + bl, by, z, [0, 0, PI / 2]); if (o.brake) add(tur, B(.3, br * 2.4, br * 3.4), m.dark, 1.0 + bl + .05, by, z); }
+    if (o.aa) for (const s of [-1, 1]) { add(tur, B(.9, .38, .34), m.dark, -.1, .85, s * (1.0 * tw)); for (let k = 0; k < 2; k++) { add(tur, Cy(.07, .07, .5, 8), M('#d8dce0', { roughness: .4 }), .5, .78 + k * .16, s * (1.0 * tw), [0, 0, PI / 2 - .5]); add(tur, Cy(.001, .07, .14, 8), m.trim, .72, .92 + k * .16 + .1, s * (1.0 * tw), [0, 0, -PI / 2 - .5]); } }
+    if (o.gatling) { add(tur, Cy(.35, .35, .3, 10), m.dark, -.8, .85, .55); for (let k = 0; k < 6; k++) { const a = k / 6 * PI * 2; add(tur, Cy(.04, .04, .9, 6), m.metal, -.4, .85 + Math.cos(a) * .17, .55 + Math.sin(a) * .17, [0, 0, PI / 2]); } }
+    if (o.rocket) { add(tur, B(1.1, .5, .5), m.dark, -.4, .8, -.75); for (let k = 0; k < 3; k++) add(tur, Cy(.1, .1, .7, 8), M('#cfd3d6', { roughness: .5 }), -.2, .7 + k * .0, -.75 + (k - 1) * .15 * 0, [0, 0, PI / 2], null); add(tur, Cy(.001, .1, .14, 8), m.trim, .22, .8, -.75, [0, 0, -PI / 2]); }
+    if (o.net) { for (let i = 0; i < 8; i++) add(g, B(.5 + (i % 3) * .2, .06, .4), i % 2 ? M('#8a7a46', { roughness: 1 }) : M('#6c6a42', { roughness: 1 }), -L / 2 + .5 + i * .35, y0 + H + .08, (i % 3 - 1) * .7, [0, i * .5, 0]); }
+    if (o.flag) { add(g, Cy(.02, .02, 1.6, 6), m.dark, -L / 2 + .2, y0 + H + .8, .8); add(g, B(.55, .32, .02), m.trim, -L / 2 + .45, y0 + H + 1.4, .8); }
+    if (o.dozer) add(g, B(.3, .6, W + .1), m.dark, L / 2 + .55, y0 + .1, 0, [0, 0, -.25]);
+    if (o.rail) { add(tur, B(.5, .7, .8), m.dark, 0, .5, 0); for (const s of [-1, 1]) { add(tur, B(3.2, .1, .1), m.metal, 1.9, .5, s * .22); } add(tur, B(3.0, .06, .2), EM(st.glow, 3), 1.9, .5, 0); add(tur, B(.12, .5, .6), EM(st.glow, 2), 3.5, .5, 0); glow(tur, st.glow, 2.4, 3.5, .5, 0, .75); }
+    g.userData.tur = tur; return g;
+  }
+  function prismTank(st) {
+    const g = tank(st, { L: 3.8, W: 2.5, turret: 'none', barrels: 0 }), m = mats(st);
+    const tur = g.userData.tur; tur.clear();
+    add(tur, Cy(1.0, 1.15, .45, 8), m.body, 0, .22, 0); add(tur, Cy(.4, .6, .5, 8), m.dark, 0, .65, 0);
+    const crys = new T.Mesh(new T.OctahedronGeometry(.7, 0), new T.MeshStandardMaterial({ color: 0xcfe9ff, emissive: new T.Color(st.glow).convertSRGBToLinear(), emissiveIntensity: 1.5, roughness: .05, metalness: .1, flatShading: true, transparent: true, opacity: .92 }));
+    crys.scale.set(1, 1.7, 1); crys.position.set(0, 1.5, 0); tur.add(crys); glow(tur, st.glow, 3.2, 0, 1.5, 0, .8);
+    for (let i = 0; i < 3; i++) { const a = i * PI * 2 / 3; add(tur, B(.12, 1.1, .3), m.metal, Math.cos(a) * .72, 1.05, Math.sin(a) * .72, [0, -a, .22]); }
+    return g;
+  }
+  function mirageTank(st) {
+    const g = tank(st, { L: 3.4, W: 2.3, turret: 'std', bl: 2.1, by: .3 }), m = mats(st);
+    // holographic tree that disguises the tank when it stands still
+    const holo = new T.Group(); holo.position.set(0, 2.5, 0); g.add(holo);
+    const hm = new T.MeshStandardMaterial({ color: 0x59ffb0, emissive: new T.Color('#25d98a').convertSRGBToLinear(), emissiveIntensity: 1.6, transparent: true, opacity: .42, depthWrite: false, roughness: .2 });
+    [[2.4, 1.3, 0], [1.9, 1.05, 1.1], [1.4, .8, 2.0]].forEach(([r, h, y]) => { const c = new T.Mesh(new T.ConeGeometry(r * .62, h * 1.6, 7), hm); c.position.y = y; holo.add(c); });
+    const tr = new T.Mesh(new T.CylinderGeometry(.18, .26, 1.6, 8), hm); tr.position.y = -.7; holo.add(tr);
+    glow(g, '#25d98a', 5, 0, 3.2, 0, .3); g.userData.holo = holo; return g;
+  }
+  function ifv(st) {
+    const g = new T.Group(), m = mats(st), L = 3.8, W = 2.4, y0 = .72;
+    chassis(g, st, m, L, W, y0, st.hover, 4);
+    add(g, B(L, 1.3, W - .2), m.body, 0, y0 + .65, 0); add(g, B(1.1, 1, W - .3), m.body, L / 2 - .1, y0 + .45, 0, [0, 0, -.65]);
+    add(g, B(L * .55, .1, W - .1), m.trim, -.5, y0 + 1.32, 0, 0, [1, 1, 1]); add(g, B(.08, .8, 1.6), m.dark, -L / 2 - .02, y0 + .7, 0);
+    for (const s of [-1, 1]) { add(g, B(.9, .36, .06), m.dark, -.3, y0 + .85, s * (W / 2 + .0)); add(g, B(.5, .26, .04), m.glassM, .9, y0 + .9, s * (W / 2 + .0)); }
+    const tur = new T.Group(); tur.position.set(.4, y0 + 1.3, 0); g.add(tur);
+    add(tur, Cy(.6, .7, .45, 8), m.body, 0, .22, 0); barrel(tur, m.metal, .5, .3, 0, 1.4, .06); add(tur, Cy(.1, .1, .3, 8), m.dark, .5, .3, 0, [0, 0, PI / 2]);
+    add(tur, B(.5, .3, .22), m.dark, -.1, .5, .62); add(tur, Cy(.06, .06, .5, 8), M('#cfd3d6', { roughness: .5 }), .15, .5, .62, [0, 0, PI / 2]); add(tur, Cy(.18, .18, .1, 10), m.dark, -.3, .54, -.3);
+    return g;
+  }
+  /* ---------- wheeled / support / artillery ---------- */
+  function wheel(g, m, x, z, r) { add(g, Cy(r, r, .38, 14), M('#17181a', { roughness: .95 }), x, r, z, [PI / 2, 0, 0]); add(g, Cy(r * .55, r * .55, .4, 10), m.metal, x, r, z, [PI / 2, 0, 0]); }
+  function technical(st) {
+    const g = new T.Group(), m = mats(st); const bodyM = M('#b0a58e', { roughness: .7, metalness: .2 });
+    for (const x of [-1.3, 1.2]) for (const z of [-.95, .95]) wheel(g, m, x, z, .52);
+    add(g, B(4, .45, 1.9), m.dark, 0, .85, 0); add(g, B(1.5, 1.0, 1.8), bodyM, .9, 1.55, 0); add(g, B(.06, .6, 1.5), m.glassM, 1.66, 1.7, 0, [0, 0, -.2]);
+    add(g, B(1.9, .5, 1.85), bodyM, -1.0, 1.28, 0); add(g, B(.2, .5, 1.9), bodyM, 1.9, .9, 0);
+    add(g, B(1.2, .1, .3), M('#e88a2a', { roughness: .6 }), .9, 1.12, .93); // faded orange stripe
+    add(g, Cy(.06, .06, 1.0, 8), m.dark, -1, 1.9, 0); const gn = new T.Group(); gn.position.set(-1, 2.5, 0); g.add(gn);
+    add(gn, B(.5, .4, .12), m.dark, .2, 0, 0); barrel(gn, m.metal, .2, .0, 0, 1.3, .06); add(gn, Cy(.2, .2, .4, 10), M('#4d5a36', { roughness: .8 }), -.1, -.06, 0, [PI / 2, 0, 0]); add(gn, B(.9, .25, .05), M('#2b2b2b', { roughness: .9 }), .5, .22, 0);
+    add(g, Cy(.5, .5, .2, 12), M('#17181a', { roughness: .95 }), -1.9, 1.4, 0, [0, PI / 2, 0]); // spare tire
+    g.userData.tur = gn; return g;
+  }
+  function v4(st) {
+    const g = new T.Group(), m = mats(st); add(g, B(5, .55, 2.1), m.dark, -.1, .9, 0);
+    for (const x of [-1.8, -.3, 1.3]) for (const s of [-1, 1]) wheel(g, m, x, s * 1.0, .55);
+    add(g, B(1.4, 1.2, 2), m.body, 1.9, 1.5, 0); add(g, B(.06, .6, 1.6), m.glassM, 2.62, 1.7, 0, [0, 0, -.2]); add(g, B(1.42, .12, 2.02), m.trim, 1.9, 1.15, 0);
+    const cr = new T.Group(); cr.position.set(-1.2, 1.3, 0); cr.rotation.z = .95; g.add(cr);
+    add(cr, B(3.8, .25, 1), m.dark, 1.3, 0, 0); const rk = new T.Group(); rk.position.set(1.3, .6, 0); cr.add(rk);
+    add(rk, Cy(.42, .42, 3.4, 14), M('#d7dbdf', { roughness: .4, metalness: .3 }), 0, 0, 0, [0, 0, PI / 2]); add(rk, Cy(.001, .42, 1.1, 14), m.trim, 2.25, 0, 0, [0, 0, -PI / 2]);
+    add(rk, B(.04, .3, .02), m.trim, 0, .4, 0); add(rk, Cy(.43, .43, .25, 14), m.trim, .6, 0, 0, [0, 0, PI / 2]);
+    for (let i = 0; i < 4; i++) { const a = i * PI / 2; add(rk, B(.7, .04, .5), m.dark, -1.5, Math.cos(a) * .5, Math.sin(a) * .5, [a, 0, 0]); }
+    add(g, B(.2, .5, .2), m.metal, -2.3, .6, .8); add(g, B(.2, .5, .2), m.metal, -2.3, .6, -.8);
+    return g;
+  }
+  function toxin(st) {
+    const g = new T.Group(), m = mats(st), bodyM = M('#8a8f55', { roughness: .7, metalness: .2 });
+    add(g, B(4.4, .5, 2), m.dark, 0, .9, 0); for (const x of [-1.5, -.1, 1.5]) for (const s of [-1, 1]) wheel(g, m, x, s * .98, .5);
+    add(g, B(1.3, 1.1, 1.9), bodyM, 1.6, 1.55, 0); add(g, B(.06, .55, 1.5), m.glassM, 2.26, 1.7, 0, [0, 0, -.2]);
+    add(g, Cy(.9, .9, 2.4, 20), M('#3c4a3c', { roughness: .4, metalness: .5 }), -.9, 1.85, 0, [0, 0, PI / 2]);
+    add(g, Cy(.88, .88, 1.4, 20), EM('#7dff3a', 1.2), -.9, 1.85, 0, [0, 0, PI / 2], null); glow(g, '#7dff3a', 4.5, -.9, 1.9, 0, .35);
+    for (let i = 0; i < 5; i++) { add(g, B(.34, .2, .06), i % 2 ? M('#e8c820', { roughness: .6 }) : M('#1d1d1d', { roughness: .8 }), -1.7 + i * .4, 1.0, .98); add(g, B(.34, .2, .06), i % 2 ? M('#e8c820', { roughness: .6 }) : M('#1d1d1d', { roughness: .8 }), -1.7 + i * .4, 1.0, -.98); }
+    const arm = new T.Group(); arm.position.set(-2.1, 2.2, 0); g.add(arm); add(arm, Cy(.07, .07, 1.4, 8), m.metal, -.2, .5, 0, [0, 0, .8]); add(arm, Cy(.14, .06, .35, 10), m.dark, -.75, 1.05, 0, [0, 0, .8]); glow(arm, '#7dff3a', .8, -.82, 1.12, 0, .8);
+    add(g, Cy(.28, .28, .3, 12), M('#e8c820', { roughness: .5 }), -.9, 2.85, 0);
+    return g;
+  }
+  function quad(st) {
+    const g = new T.Group(), m = mats(st), bodyM = M('#b5a47a', { roughness: .7, metalness: .25 });
+    add(g, B(4.6, .6, 2.2), m.dark, 0, .9, 0); for (const s of [-1, 1]) { wheel(g, m, 1.8, s * 1.05, .52); add(g, B(2.2, .75, .5), m.dark, -1.2, .55, s * 1.0); for (let i = 0; i < 4; i++) add(g, Cy(.3, .3, .5, 10), m.metal, -2 + i * .6, .4, s * 1.0, [PI / 2, 0, 0]); }
+    add(g, B(1.5, 1.0, 2), bodyM, 1.4, 1.5, 0); add(g, B(.06, .55, 1.6), m.glassM, 2.16, 1.65, 0, [0, 0, -.2]); add(g, B(1.9, .5, 2), bodyM, -.9, 1.35, 0);
+    const tur = new T.Group(); tur.position.set(-1.0, 1.7, 0); g.add(tur); add(tur, Cy(.55, .65, .3, 10), m.dark, 0, 0, 0); const gun = new T.Group(); gun.position.set(0, .6, 0); gun.rotation.z = .75; tur.add(gun);
+    add(gun, B(.7, .9, 1.0), m.dark, .1, 0, 0);
+    for (const y of [-.2, .2]) for (const z of [-.28, .28]) { barrel(gun, m.metal, .4, y, z, 1.8, .06); add(gun, Cy(.1, .1, .3, 8), m.dark, 2.15, y, z, [0, 0, PI / 2]); }
+    add(gun, Cy(.3, .3, .3, 10), M('#5a5030', { roughness: .8 }), -.1, 0, .72, [PI / 2, 0, 0]); add(gun, Cy(.3, .3, .3, 10), M('#5a5030', { roughness: .8 }), -.1, 0, -.72, [PI / 2, 0, 0]);
+    g.userData.tur = tur; return g;
+  }
+  function inferno(st) {
+    const g = tank(st, { L: 3.9, W: 2.4, turret: 'none', barrels: 0 }), m = mats(st); const tur = g.userData.tur; tur.clear();
+    add(tur, B(1.9, .5, 1.7), m.body, -.3, .25, 0); const mort = new T.Group(); mort.position.set(.2, .6, 0); mort.rotation.z = .85; tur.add(mort);
+    add(mort, Cy(.55, .5, 2.4, 14), m.dark, 1.0, 0, 0, [0, 0, PI / 2]); add(mort, Cy(.62, .62, .25, 14), m.metal, 2.25, 0, 0, [0, 0, PI / 2]); add(mort, Cy(.3, .3, .1, 12), EM('#ff7a1a', 3), 2.4, 0, 0, [0, 0, PI / 2]); glow(mort, '#ff7a1a', 1.6, 2.45, 0, 0, .9);
+    for (const s of [-1, 1]) add(tur, Cy(.34, .34, 1.1, 12), M('#b04a1a', { roughness: .4, metalness: .5 }), -1.1, .75, s * .6, [PI / 2, 0, 0]);
+    add(tur, Cy(.34, .34, 1.1, 12), EM('#ff7a1a', .9), -1.1, .75, 0, [PI / 2, 0, 0]);
+    return g;
+  }
+  function walker(st) {
+    const g = new T.Group(), m = mats(st), gl = st.glow;
+    for (const s of [-1, 1]) {
+      add(g, B(.9, .35, .9), m.dark, .15, .18, s * 1.1); add(g, Cy(.2, .26, 1.7, 10), m.metal, -.1, 1.0, s * 1.1, [0, 0, -.35]); add(g, Sp(.3), m.dark, -.4, 1.75, s * 1.1);
+      add(g, Cy(.22, .2, 1.4, 10), m.body, -.12, 2.3, s * 1.15, [0, 0, .25]); add(g, B(.9, .5, .7), m.body, .1, 1.7, s * 1.1, 0, [1, .4, 1]);
+    }
+    add(g, B(1.9, 1.2, 2.2), m.body, -.5, 3.1, 0); add(g, B(1.92, .14, 2.22), EM(gl, 2), -.5, 2.7, 0); add(g, B(1.3, .8, 1.3), m.body, .5, 3.3, 0, [0, 0, -.4]);
+    add(g, B(.9, .4, .9), m.dark, .15, 3.8, 0); add(g, B(.08, .24, .7), EM(gl, 3), .62, 3.82, 0); add(g, Sp(.5, 14, 10), m.body, -.4, 3.9, 0, 0, [1, .8, 1]);
+    for (const s of [-1, 1]) { add(g, B(1.0, .7, .6), m.dark, -.5, 3.4, s * 1.45); barrel(g, m.metal, -.1, 3.4, s * 1.45, 1.5, .09); add(g, B(.3, .3, .3), EM(gl, 2.5), 1.4, 3.4, s * 1.45); }
+    add(g, Cy(.12, .12, 1.2, 6), m.dark, -1.5, 4.6, .5); add(g, Sp(.1), EM(gl, 3), -1.5, 5.2, .5);
+    const dome = new T.Mesh(new T.SphereGeometry(3.9, 28, 18, 0, PI * 2, 0, PI / 2), new T.MeshStandardMaterial({ color: 0x74e6ff, emissive: new T.Color(gl).convertSRGBToLinear(), emissiveIntensity: .5, transparent: true, opacity: .13, side: T.DoubleSide, depthWrite: false, roughness: .1 }));
+    dome.position.set(-.2, 0, 0); g.add(dome);
+    const ring = new T.Mesh(new T.TorusGeometry(3.9, .06, 8, 56), new T.MeshBasicMaterial({ color: new T.Color(gl).convertSRGBToLinear(), toneMapped: false })); ring.rotation.x = PI / 2; ring.position.set(-.2, .08, 0); g.add(ring);
+    const wire = new T.Mesh(new T.SphereGeometry(3.92, 14, 8, 0, PI * 2, 0, PI / 2), new T.MeshBasicMaterial({ color: new T.Color(gl).convertSRGBToLinear(), wireframe: true, transparent: true, opacity: .18, toneMapped: false })); wire.position.set(-.2, 0, 0); g.add(wire);
+    return g;
+  }
+  /* ---------- air ---------- */
+  function heli(st, o) {
+    o = o || {}; const g = new T.Group(), m = mats(st), body = M(o.body || st.body, { roughness: .35, metalness: .5 });
+    if (!o.transport) {
+      add(g, Sp(1, 20, 14), body, 0, 0, 0, 0, [2.1, .8, .85]); add(g, Sp(.6, 16, 10), m.glassM, 1.45, .12, 0, 0, [1.1, .8, .9]);
+      add(g, Cy(.14, .3, 3.4, 8), body, -2.9, .2, 0, [0, 0, PI / 2]); add(g, B(.5, 1.0, .08), m.trim, -4.5, .6, 0); add(g, B(.9, .08, 1.5), body, -4.3, .2, 0);
+      for (const s of [-1, 1]) { add(g, B(1.6, .1, .8), m.dark, .1, -.1, s * 1.15); for (let k = 0; k < 3; k++) add(g, Cy(.07, .07, .7, 6), M('#d8dce0', { roughness: .4 }), .55, -.22 + (k - 1) * .0, s * (.85 + k * .17), [0, 0, PI / 2]); add(g, B(2.6, .08, .08), m.dark, 0, -.98, s * .7); add(g, B(.08, .25, .08), m.dark, .5, -.8, s * .7); add(g, B(.08, .25, .08), m.dark, -.5, -.8, s * .7); }
+      add(g, B(.9, .25, .25), m.dark, 1.6, -.6, 0); barrel(g, m.metal, 1.8, -.6, 0, .7, .05);
+      const r = new T.Group(); r.position.y = 1.05; g.add(r); for (let i = 0; i < 4; i++) add(r, B(5.2, .04, .24), m.dark, 0, 0, 0, [0, i * PI / 2, 0]); add(r, Cy(.14, .18, .3, 8), m.dark, 0, -.1, 0);
+      const disc = new T.Mesh(new T.CircleGeometry(2.6, 32), new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .1, depthWrite: false })); disc.rotation.x = -PI / 2; r.add(disc); g.userData.rotors = [r];
+      const tr = new T.Group(); tr.position.set(-4.5, .55, .12); g.add(tr); for (let i = 0; i < 2; i++) add(tr, B(.04, 1, .08), m.dark, 0, 0, 0, [i * PI / 2, 0, 0]); g.userData.rotors.push(tr); tr.userData.axis = 'z';
+    } else {
+      add(g, B(5.6, 1.5, 1.7), body, 0, 0, 0); add(g, B(1.6, 1.0, 1.66), body, 3, -.1, 0, [0, 0, -.5]); add(g, B(.06, .6, 1.4), m.glassM, 3.4, .3, 0, [0, 0, -.5]); add(g, B(1.6, .15, 1.74), m.trim, 0, .2, 0);
+      for (const s of [-1, 1]) { add(g, B(2.0, .8, .7), m.dark, -.3, -.9, s * .75); add(g, Cy(.35, .35, .4, 12), m.dark, -.3, -1.3, s * .75, [PI / 2, 0, 0]); add(g, B(1.3, .5, .06), m.glassM, 1.5, .1, s * .86); }
+      add(g, B(.9, 1.4, .1), m.trim, -3.2, .7, 0); add(g, B(1.2, .1, 2), body, -3.1, .1, 0);
+      g.userData.rotors = [];
+      for (const x of [1.9, -2.2]) { const r = new T.Group(); r.position.set(x, 1.35, 0); g.add(r); add(r, Cy(.14, .2, .7, 8), m.dark, 0, -.35, 0); for (let i = 0; i < 3; i++) add(r, B(4.0, .04, .22), m.dark, 0, 0, 0, [0, i * PI * 2 / 3, 0]); g.userData.rotors.push(r); }
+      add(g, Cy(.12, .12, .6, 8), m.metal, 3.2, -.95, 0, [0, 0, PI / 2]); add(g, B(.5, .3, .4), m.dark, 3.0, -.8, 0); barrel(g, m.metal, 3.3, -.8, 0, .9, .06);
+    }
+    return g;
+  }
+  function wing(st, o) {
+    const g = new T.Group(), m = mats(st), pts = o.pts, sh = new T.Shape(); sh.moveTo(pts[0][0], pts[0][1]); pts.slice(1).forEach(p => sh.lineTo(p[0], p[1])); sh.closePath();
+    const geo = new T.ExtrudeGeometry(sh, { depth: o.t || .35, bevelEnabled: true, bevelThickness: .06, bevelSize: .06, bevelSegments: 1 }); geo.rotateX(-PI / 2); geo.translate(0, -(o.t || .35) / 2, 0);
+    add(g, geo, M(o.col || '#2c3037', { roughness: .45, metalness: .6 }), 0, 0, 0);
+    add(g, B(1.8, .3, .8), M(o.col2 || '#1d2025', { roughness: .4, metalness: .6 }), .5, .32, 0, [0, 0, 0]); add(g, B(.9, .12, .5), m.glassM, 1.5, .4, 0);
+    for (const s of [-1, 1]) { add(g, B(1.4, .26, .5), M('#101216', { roughness: .8 }), -1.8, .12, s * .8); }
+    if (o.em) { for (const s of [-1, 1]) { add(g, B(3.2, .06, .08), EM(o.em, 3), 1, .2, s * 2.6, [0, s * -.45, 0]); glow(g, o.em, 1.6, -2.4, .2, s * .8, .8); } }
+    if (o.bombs) for (const s of [-1, 1]) for (let k = 0; k < 2; k++) add(g, Cy(.14, .14, .9, 8), M('#8a8f95', { roughness: .5, metalness: .5 }), -.2 - k * .6, -.35, s * (.9 + k * .0 + .35), [0, 0, PI / 2]);
+    return g;
+  }
+  function airship(st) {
+    const g = new T.Group(), m = mats(st); add(g, Sp(1, 28, 18), M(st.body, { roughness: .6, metalness: .3 }), 0, 0, 0, 0, [6.2, 2.1, 2.1]);
+    for (let i = -2; i <= 2; i++) add(g, new T.TorusGeometry(2.0 * Math.sqrt(1 - Math.pow(i * 1.15 / 6.2, 2)), .05, 6, 28), m.dark, i * 1.15, 0, 0, [0, PI / 2, 0]);
+    add(g, B(.9, .1, 4.4), m.trim, 2.5, 0, 0); add(g, B(.9, .1, 4.4), m.trim, -5.0, 0, 0); add(g, B(.9, 4.4, .1), m.trim, -5.0, 0, 0); add(g, B(1.8, .04, 2.2), m.trim, -5.4, 0, 0);
+    add(g, B(3.0, .9, 1.3), m.dark, .4, -2.4, 0); add(g, B(.06, .5, 1.0), m.glassM, 1.9, -2.3, 0); for (const s of [-1, 1]) { add(g, Cy(.03, .03, .8, 4), m.dark, 1.2, -1.9, s * .5); add(g, Cy(.03, .03, .8, 4), m.dark, -.4, -1.9, s * .5); }
+    for (let k = 0; k < 4; k++) add(g, Cy(.18, .18, .8, 8), M('#2a2a2a', { roughness: .5, metalness: .6 }), -.7 + k * .5, -3.05, 0, [PI / 2, 0, 0]);
+    for (const s of [-1, 1]) { add(g, Cy(.4, .5, .9, 10), m.dark, -3.6, -1.0, s * 1.9, [0, 0, PI / 2]); const p = new T.Group(); p.position.set(-4.15, -1.0, s * 1.9); g.add(p); for (let i = 0; i < 3; i++) add(p, B(.04, 1.5, .1), m.dark, 0, 0, 0, [i * PI * 2 / 3, 0, 0]); g.userData.rotors = (g.userData.rotors || []).concat([p]); p.userData.axis = 'x'; }
+    add(g, B(.9, .5, .6), M('#d8c040', { roughness: .6 }), 3.3, 1.4, 0); add(g, Cy(.05, .05, 1.5, 6), m.dark, 3.3, 2.2, 0); add(g, B(.6, .35, .02), m.trim, 3.6, 2.7, 0);
+    return g;
+  }
+  function drones(st) {
+    const g = new T.Group(), m = mats(st), pos = [[0, 0, 0], [-1.7, .0, -1.5], [-1.7, 0, 1.5], [-3.4, .0, 0], [-3.4, 0, -3], [-3.4, 0, 3]];
+    g.userData.rotors = [];
+    pos.forEach(([x, y, z], i) => {
+      const d = new T.Group(); d.position.set(x, y + Math.sin(i) * .25, z); g.add(d);
+      add(d, new T.OctahedronGeometry(.55, 0), M('#d8d2ff', { roughness: .2, metalness: .3, emissive: st.trim, emissiveIntensity: 1.3, flatShading: true }), 0, 0, 0, 0, [1.5, .6, 1.2]); add(d, B(.3, .1, .3), EM(st.glow, 3), .5, 0, 0);
+      for (let k = 0; k < 4; k++) { const a = k * PI / 2 + PI / 4; add(d, new T.TorusGeometry(.38, .045, 6, 18), m.dark, Math.cos(a) * .9, .12, Math.sin(a) * .9, [PI / 2, 0, 0]); add(d, B(.7, .02, .08), m.metal, Math.cos(a) * .9, .13, Math.sin(a) * .9, [0, a, 0]); add(d, Cy(.02, .02, .8, 4), m.dark, Math.cos(a) * .45, .1, Math.sin(a) * .45, [PI / 2, 0, a + PI / 2]); }
+      glow(d, st.trim, 2.8, 0, 0, 0, .55);
+    });
+    return g;
+  }
+
+  /* ---------- rosters (same order as the NATIONS data) ---------- */
+  const SC = 3; // infantry are drawn larger so they read next to vehicles
+  const ROSTER = {
+    aa: [
+      st => ({ g: soldier(st, { weapon: 'rifle', helm: 'helmet' }), s: SC }),
+      st => ({ g: soldier(st, { weapon: 'javelin', helm: 'helmet' }), s: SC }),
+      st => ({ g: soldier(st, { weapon: 'sniper', helm: 'helmet', uniform: '#58603c' }), s: SC }),
+      st => ({ g: tank(st, { L: 3.6, turret: 'std', bl: 2.5, brake: true }), s: 1 }),
+      st => ({ g: ifv(st), s: 1 }),
+      st => ({ g: heli(st), s: .85, y: 6 }),
+      st => ({ g: wing(st, { pts: [[5.2, 0], [-2.2, 6.5], [-1, 2.2], [-3.2, 0], [-1, -2.2], [-2.2, -6.5]], bombs: true }), s: .8, y: 6.5 })
+    ],
+    rs: [
+      st => ({ g: soldier(st, { weapon: 'smg', helm: 'ushanka' }), s: SC }),
+      st => ({ g: soldier(st, { weapon: 'flak', helm: 'helmet' }), s: SC }),
+      st => ({ g: soldier(st, { weapon: 'tesla', helm: 'helmet', uniform: '#4a4f6a' }), s: SC }),
+      st => ({ g: tank(st, { L: 3.8, W: 2.4, turret: 'boxy', bl: 2.6, brake: true, skirts: true, flag: true }), s: 1 }),
+      st => ({ g: tank(st, { L: 4.8, W: 3.0, H: .85, turret: 'big', tw: 1.15, barrels: 2, bs: .85, bl: 2.8, br: .13, aa: true, skirts: true, wheels: 6, tx: -.2 }), s: .9 }),
+      st => ({ g: v4(st), s: .85 }),
+      st => ({ g: airship(st), s: .72, y: 6.2 })
+    ],
+    jd: [
+      st => ({ g: soldier(st, { weapon: 'rifle', helm: 'cap' }), s: SC }),
+      st => ({ g: soldier(st, { weapon: 'bazooka', helm: 'cap' }), s: SC }),
+      st => ({ g: soldier(st, { weapon: 'hack', helm: 'visor', uniform: '#2f3a30' }), s: SC }),
+      st => ({ g: tank(st, { L: 3.3, W: 2.1, turret: 'std', bl: 2.2, flag: true }), s: 1 }),
+      st => ({ g: tank(st, { L: 5.0, W: 3.1, H: .95, turret: 'big', tw: 1.2, barrels: 2, bs: .85, bl: 3.0, br: .15, gatling: true, skirts: true, wheels: 6, tx: -.2 }), s: .88 }),
+      st => ({ g: inferno(st), s: 1 }),
+      st => ({ g: heli(st, { transport: true, body: '#4d5f36' }), s: .8, y: 6.2 })
+    ],
+    ss: [
+      st => ({ g: soldier(st, { weapon: 'rifle', helm: 'cloth' }), s: SC }),
+      st => ({ g: soldier(st, { weapon: 'rpg', helm: 'cloth', uniform: '#8f7448' }), s: SC }),
+      st => ({ g: soldier(st, { weapon: 'saboteur', helm: 'hood', uniform: '#1e2024' }), s: SC }),
+      st => ({ g: technical(st), s: 1 }),
+      st => ({ g: tank(st, { L: 3.3, W: 2.2, H: .62, turret: 'std', bl: 2.1, rocket: true, net: true }), s: 1 }),
+      st => ({ g: quad(st), s: 1 }),
+      st => ({ g: toxin(st), s: 1 })
+    ],
+    nv: [
+      st => ({ g: soldier(st, { weapon: 'pulse', helm: 'visor' }), s: SC, y: .6 }),
+      st => ({ g: drones(st), s: .85, y: 5 }),
+      st => ({ g: walker(st), s: .62 }),
+      st => ({ g: tank(st, { L: 3.9, W: 2.2, H: .62, turret: 'boxy', rail: true, barrels: 0 }), s: 1 }),
+      st => ({ g: mirageTank(st), s: 1 }),
+      st => ({ g: prismTank(st), s: 1 }),
+      st => ({ g: wing(st, { pts: [[4.2, 0], [-1.2, 3.8], [-3.2, 2.6], [-2.2, 0], [-3.2, -2.6], [-1.2, -3.8]], col: '#232738', col2: '#14172a', em: '#45d4ff', t: .3 }), s: .95, y: 6.2 })
+    ]
+  };
+
+  /* ---------- stage ---------- */
+  function floorTex(rim) {
+    const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, 512, 512); g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 2;
+    for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, 512); g.stroke(); g.beginPath(); g.moveTo(0, i * 64); g.lineTo(512, i * 64); g.stroke(); }
+    const t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(30, 22); t.anisotropy = 4; return t;
+  }
+  function envTex(renderer, top, low) {
+    const s = new T.Scene(), g = new T.SphereGeometry(50, 32, 16), p = g.attributes.position, cols = [];
+    for (let i = 0; i < p.count; i++) { const t = (p.getY(i) / 50 + 1) / 2; const c = new T.Color(low).convertSRGBToLinear().lerp(new T.Color(top).convertSRGBToLinear(), Math.pow(t, 1.4)); cols.push(c.r, c.g, c.b); }
+    g.setAttribute('color', new T.Float32BufferAttribute(cols, 3)); s.add(new T.Mesh(g, new T.MeshBasicMaterial({ side: T.BackSide, vertexColors: true })));
+    const key = new T.Mesh(new T.SphereGeometry(8, 12, 8), new T.MeshBasicMaterial({ color: new T.Color(5, 4.8, 4.4) })); key.position.set(-30, 35, 25); s.add(key);
+    const pm = new T.PMREMGenerator(renderer), rt = pm.fromScene(s, .04); pm.dispose(); return rt.texture;
+  }
+  const LIVE = [];
+  function buildArmy(el) {
+    const key = el.dataset.army, st = ARMY[key], N = NATIONS.find(n => n.id === key), canvas = el.querySelector('canvas');
+    const r = new T.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5)); r.setSize(1400, 500, false);
+    r.outputEncoding = T.sRGBEncoding; r.toneMapping = T.ACESFilmicToneMapping; r.toneMappingExposure = st.hover ? 1.15 : 1.0; r.shadowMap.enabled = true; r.shadowMap.type = T.PCFSoftShadowMap;
+    const sc = new T.Scene(); const hz = new T.Color(st.floor).multiplyScalar(3.0), tp = new T.Color(st.floor).multiplyScalar(1.35), gc = document.createElement('canvas'); gc.width = 4; gc.height = 256;
+    { const g = gc.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#' + tp.getHexString()); gr.addColorStop(.55, '#' + new T.Color(st.floor).multiplyScalar(2.2).getHexString()); gr.addColorStop(1, '#' + hz.getHexString()); g.fillStyle = gr; g.fillRect(0, 0, 4, 256); }
+    const bgT = new T.CanvasTexture(gc); bgT.encoding = T.sRGBEncoding; sc.background = bgT; sc.fog = new T.Fog(hz.clone().convertSRGBToLinear(), 38, 120);
+    sc.environment = envTex(r, '#8aa0c0', st.floor);
+    const cam = new T.PerspectiveCamera(27, 1400 / 500, 1, 400); cam.position.set(0, 11, 44); cam.lookAt(0, 3.7, 0);
+    sc.add(new T.HemisphereLight(0xcfe0ff, new T.Color(st.floor).convertSRGBToLinear(), .55));
+    const key1 = new T.DirectionalLight(0xfff1dd, 2.4); key1.position.set(-22, 40, 26); key1.castShadow = true; key1.shadow.mapSize.set(2048, 2048); Object.assign(key1.shadow.camera, { left: -36, right: 36, top: 22, bottom: -20, near: 1, far: 130 }); key1.shadow.bias = -.0006; key1.shadow.normalBias = .03; sc.add(key1);
+    const rim = new T.DirectionalLight(new T.Color(st.rim).convertSRGBToLinear(), 1.6); rim.position.set(25, 14, -30); sc.add(rim);
+    const fill = new T.DirectionalLight(0x9db4ff, .5); fill.position.set(30, 8, 30); sc.add(fill);
+    const fl = new T.Mesh(new T.PlaneGeometry(400, 300), new T.MeshStandardMaterial({ color: new T.Color(st.floor).multiplyScalar(1.5).convertSRGBToLinear(), roughness: .75, metalness: .1, map: floorTex(), envMapIntensity: .25 }));
+    fl.rotation.x = -PI / 2; fl.receiveShadow = true; sc.add(fl);
+    const strip = new T.Mesh(new T.BoxGeometry(60, .05, .18), new T.MeshBasicMaterial({ color: new T.Color(st.trim).convertSRGBToLinear(), toneMapped: false })); strip.position.set(0, .03, -6.2); sc.add(strip);
+    glow(sc, st.trim, 70, 0, .2, -6.2, .0);
+
+    const spin = [], U = ROSTER[key], labels = el.querySelector('.labels'), SP = 7.4; labels.innerHTML = '';
+    U.forEach((f, i) => {
+      const o = f(st), pv = new T.Group(); pv.position.set((i - 3) * SP, o.y || 0, 0); pv.rotation.y = -.55; pv.scale.setScalar(o.s || 1); pv.add(o.g); sc.add(pv);
+      if (o.y > 1.2) { const sh = new T.Mesh(new T.CircleGeometry(1, 24), new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .32, depthWrite: false })); sh.rotation.x = -PI / 2; sh.position.set((i - 3) * SP, .04, 0); sh.scale.set(3.2, 2.2, 1); sc.add(sh); }
+      pv.traverse(c => { if (c.isMesh) c.castShadow = true; });
+      spin.push({ pv, g: o.g, base: -.55 });
+      const u = N.units[i], d = document.createElement('div'); d.className = 'ul'; d.dataset.i = i; d.innerHTML = '<b>' + u[0] + '</b><span>' + u[1] + '</span>'; labels.appendChild(d);
+    });
+    r.render(sc, cam);
+    // position labels under their unit
+    const w = 1400, v = new T.Vector3();
+    U.forEach((f, i) => { v.set((i - 3) * SP, 0, 3.5).project(cam); labels.children[i].style.left = ((v.x + 1) / 2 * 100) + '%'; });
+    const st1 = { el, r, sc, cam, spin, visible: false };
+    LIVE.push(st1); return st1;
+  }
+
+  function init() {
+    initCache();
+    document.querySelectorAll('.army').forEach(el => { try { buildArmy(el); } catch (e) { console.error(e); el.insertAdjacentHTML('beforeend', '<div class="fallback">WebGL is not available in this browser.</div>'); } });
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if ('IntersectionObserver' in window) { const io = new IntersectionObserver(es => es.forEach(e => { const s = LIVE.find(x => x.el === e.target); if (s) s.visible = e.isIntersecting; })); LIVE.forEach(s => io.observe(s.el)); } else LIVE.forEach(s => s.visible = true);
+    let last = 0; const loop = now => {
+      requestAnimationFrame(loop); const t = now / 1000, dt = Math.min(.05, t - (last || t)); last = t;
+      for (const s of LIVE) { if (!s.visible) continue;
+        s.spin.forEach((u, i) => { u.pv.rotation.y = u.base + t * .35;
+          (u.g.userData.rotors || []).forEach(r => { const ax = r.userData.axis; if (ax === 'z') r.rotation.z += dt * 30; else if (ax === 'x') r.rotation.x += dt * 30; else r.rotation.y += dt * 24; });
+          if (u.g.userData.holo) u.g.userData.holo.position.y = 2.5 + Math.sin(t * 1.5) * .1; });
+        s.r.render(s.sc, s.cam); }
+    };
+    requestAnimationFrame(loop);
+  }
+  function initCache() { /* reserved */ }
+  init();
+})();
 
 </script>
